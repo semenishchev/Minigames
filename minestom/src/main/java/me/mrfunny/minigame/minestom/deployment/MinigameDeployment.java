@@ -9,15 +9,16 @@ import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 
-public abstract class MinigameDeployment extends Deployment {
+public abstract class MinigameDeployment<T extends BalancedInstance> extends Deployment {
     private final Map<UUID, @NotNull UUID> playerToInstance = new HashMap<>();
     public MinigameDeployment(DeploymentInfo deploymentInfo) {
         super(deploymentInfo);
     }
 
-    public abstract BalancedInstance createInstanceObject(@NotNull String subtype, @Nullable Map<String, Objects> data);
+    public abstract T createInstanceObject(@NotNull String subtype, @Nullable Map<String, Objects> data);
 
     @Override
     public UUID createInstance(@NotNull String subtype, @Nullable Map<String, Objects> data) {
@@ -53,8 +54,24 @@ public abstract class MinigameDeployment extends Deployment {
         return playerToInstance.get(player);
     }
 
+    /**
+     * Get an instance for the player where there's at least 1 place free
+     * @param subtype
+     * @return
+     */
     @Override
     public UUID getAvailableInstanceOfType(@NotNull String subtype) {
+        return null;
+    }
+
+    /**
+     * Used when players are in a group (party). Used to look up an instance where there's a completely free team
+     * @param subtype
+     * @param playersInTeam
+     * @return
+     */
+    @Override
+    public UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam) {
         return null;
     }
 
@@ -71,4 +88,16 @@ public abstract class MinigameDeployment extends Deployment {
 
     @NotNull
     public abstract List<String> getSupportedSubtypes();
+
+    public static File getMapDataFolder(String minigame, String mapName) {
+
+    }
+
+    public static File getMapSchematic(String minigame, String mapName) {
+
+    }
+
+    public static File getMapConfig(String minigame, String mapName) {
+
+    }
 }

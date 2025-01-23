@@ -4,7 +4,7 @@ import me.mrfunny.minigame.deployment.Deployment;
 
 import java.util.UUID;
 
-public abstract class LoadBalancerClient {
+public abstract class LoadBalancerClient implements ServerInfrastructure {
     protected final Deployment requestHandler;
 
     public LoadBalancerClient(Deployment requestHandler) {

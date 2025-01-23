@@ -8,17 +8,21 @@ import net.minestom.server.instance.IChunkLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 
-public class BedwarsDeployment extends MinigameDeployment {
+public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
     public BedwarsDeployment(DeploymentInfo deploymentInfo) {
         super(deploymentInfo);
     }
 
     @Override
-    public BalancedInstance createInstanceObject(@NotNull String subtype, @Nullable Map<String, Objects> data) {
+    public BedwarsInstance createInstanceObject(@NotNull String subtype, @Nullable Map<String, Objects> data) {
         IChunkLoader schematicChunkLoader = null; // todo
-        return new BalancedInstance(subtype, schematicChunkLoader);
+        BedwarsInstance bedwarsInstance = new BedwarsInstance(subtype, schematicChunkLoader);
+
+        bedwarsInstance.setAllowTeamSelector(data != null && data.get("teamSelector").toString().equals("true"));
+        return bedwarsInstance;
     }
 
     @Override

@@ -4,6 +4,7 @@ package me.mrfunny.minigame.minestom;
 import me.mrfunny.minigame.balancer.LoadBalancerClient;
 import me.mrfunny.minigame.balancer.impl.DebugBalancerClient;
 import me.mrfunny.minigame.bedwars.BedwarsDeployment;
+import me.mrfunny.minigame.bedwars.BedwarsSetup;
 import me.mrfunny.minigame.deployment.info.DebugDeploymentInfo;
 import me.mrfunny.minigame.deployment.info.DeploymentInfo;
 import me.mrfunny.minigame.deployment.info.PterodactylDeploymentInfo;
@@ -26,8 +27,14 @@ public class Main {
         MinecraftServer.setCompressionThreshold(0);
         MinecraftServer.setBrandName("Minigame");
         boolean debug = args.length != 0;
+        String setup = System.getProperty("setup");
+        if(debug && setup != null) {
+            BedwarsSetup.init(args[0], setup);
+            minecraftServer.start("0.0.0.0", 25565);
+            return;
+        }
         DeploymentInfo deploymentInfo = debug ? new DebugDeploymentInfo(args[0]) : new PterodactylDeploymentInfo();
-        MinigameDeployment minigame = pickMinigame(deploymentInfo);
+        MinigameDeployment<?> minigame = pickMinigame(deploymentInfo);
         LoadBalancerClient client = new DebugBalancerClient(minigame);
         minigame.setBalancer(client);
         minigame.load();
@@ -46,7 +53,7 @@ public class Main {
         minecraftServer.start(deploymentInfo.getServerHost(), deploymentInfo.getServerPort());
     }
 
-    private static MinigameDeployment pickMinigame(DeploymentInfo info) {
+    private static MinigameDeployment<?> pickMinigame(DeploymentInfo info) {
         return switch(info.getMinigameType()) {
             case "bedwars" -> new BedwarsDeployment(info);
             default -> throw new IllegalStateException("Unexpected value: " + info.getMinigameType());

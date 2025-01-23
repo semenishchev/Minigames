@@ -53,6 +53,8 @@ public abstract class Deployment {
      */
     public abstract UUID getAvailableInstanceOfType(@NotNull String subtype);
 
+    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam);
+
     /**
      * @return Player count accross all instances.
      */

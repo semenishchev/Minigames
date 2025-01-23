@@ -2,6 +2,7 @@ package me.mrfunny.minigame.minestom.instance;
 
 import net.minestom.server.instance.IChunkLoader;
 import net.minestom.server.instance.InstanceContainer;
+import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.world.DimensionType;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,6 +16,7 @@ public class BalancedInstance extends InstanceContainer {
     public static UUID createManagedUuid() {
         return getManagedUuid(instanceCount.getAndIncrement());
     }
+
     public static UUID getManagedUuid(int number) {
         return new UUID(0L, number);
     }
@@ -22,5 +24,10 @@ public class BalancedInstance extends InstanceContainer {
         super(createManagedUuid(), DimensionType.OVERWORLD, loader);
         this.subtype = subtype;
         setGenerator(null);
+        setChunkSupplier(LightingChunk::new);
+    }
+
+    public @Nullable String getSubtype() {
+        return subtype;
     }
 }
