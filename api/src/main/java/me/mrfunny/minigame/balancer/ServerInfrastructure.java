@@ -1,5 +1,6 @@
 package me.mrfunny.minigame.balancer;
 
+import me.mrfunny.minigame.storage.StorageMap;
 import net.kyori.adventure.text.Component;
 
 import java.time.Duration;
@@ -17,9 +18,9 @@ public interface ServerInfrastructure {
     List<String> getPlayerPermissionNodes(UUID player);
     boolean isBanned(UUID player);
     void banPlayer(UUID player, Duration duration, String reason);
-    Map<String, Object> getGlobalPlayerData(UUID player);
-    Map<String, Object> getPlayerData(UUID player, String collection);
-    void updateGlobalPlayerData(UUID player, Map<String, Object> data);
-    void updatePlayerData(UUID player, String collection, Map<String, Object> data);
+    StorageMap getGlobalPlayerData(UUID player);
+    StorageMap getPlayerData(UUID player, String collection);
+    void updateGlobalPlayerData(UUID player, StorageMap data);
+    void updatePlayerData(UUID player, String collection, StorageMap data);
     CompletableFuture<String> requestGameServer(UUID player, String minigameType, String subtype, Map<String, Object> data);
 }

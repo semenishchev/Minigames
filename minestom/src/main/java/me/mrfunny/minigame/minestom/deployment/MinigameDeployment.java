@@ -90,14 +90,18 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
     public abstract List<String> getSupportedSubtypes();
 
     public static File getMapDataFolder(String minigame, String mapName) {
-
+        File folder = new File("maps/" + minigame + "/" + mapName);
+        if(!folder.exists()) {
+            folder.mkdirs();
+        }
+        return folder;
     }
 
     public static File getMapSchematic(String minigame, String mapName) {
-
+        return new File(getMapDataFolder(minigame, mapName), "map.schematic");
     }
 
     public static File getMapConfig(String minigame, String mapName) {
-
+        return new File(getMapDataFolder(minigame, mapName), "map.yml");
     }
 }
