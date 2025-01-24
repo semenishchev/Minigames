@@ -2,6 +2,9 @@ package me.mrfunny.minigame.bedwars;
 
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.command.builder.Command;
+import net.minestom.server.command.builder.arguments.ArgumentType;
+import net.minestom.server.command.builder.suggestion.SuggestionEntry;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
@@ -17,6 +20,7 @@ import java.util.UUID;
 public class BedwarsSetup extends InstanceContainer {
     private static BedwarsSetup instance;
     private final String mapName;
+    private BedwarsGameTypes gameType;
 
     public BedwarsSetup(String mapName, IChunkLoader loader) {
         super(UUID.randomUUID(), DimensionType.OVERWORLD, loader);
@@ -44,7 +48,28 @@ public class BedwarsSetup extends InstanceContainer {
         });
     }
 
+    private static void registerCommands() {
+        MinecraftServer.getCommandManager().register();
+    }
+
     public static BedwarsSetup getInstance() {
         return instance;
+    }
+
+    public class SelectModeCommand extends Command {
+
+        public SelectModeCommand() {
+            super("selectmode");
+            var modeArgument = ArgumentType.Enum("mode", BedwarsGameTypes.class)
+                .setSuggestionCallback((sender, context, suggestion) -> {
+                    for(BedwarsGameTypes value : BedwarsGameTypes.values()) {
+                        suggestion.addEntry(new SuggestionEntry(value.name()));
+                    }
+                });
+            addSyntax((sender, context) -> {
+                gameType = context.get(modeArgument);
+                sender.sendMessage("Selected " + gameType.name() + "(" + gameType.getBalancerName() + ")");
+            }, modeArgument);
+        }
     }
 }
