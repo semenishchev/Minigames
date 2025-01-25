@@ -1,4 +1,4 @@
-package me.mrfunny.minigame.bedwars;
+package me.mrfunny.minigame.bedwars.instance;
 
 import me.mrfunny.minigame.storage.StorageKey;
 

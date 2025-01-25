@@ -5,12 +5,29 @@ repositories {
     mavenCentral()
 }
 
+val include: Configuration by configurations.creating {
+    configurations.implementation.get().extendsFrom(this)
+}
+
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    implementation("net.minestom:minestom-snapshots:0d47d97417")
-    implementation("dev.hollowcube:schem:1.3.1")
-    implementation(project(":api"))
+    include("net.minestom:minestom-snapshots:0d47d97417")
+    include("dev.hollowcube:schem:1.3.1")
+    include("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.2")
+    include(project(":api"))
+}
+
+tasks.withType<Jar> {
+    include.forEach { dep ->
+        from(project.zipTree(dep)){
+            exclude("META-INF', 'META-INF/**")
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+    }
+    manifest {
+        manifest.attributes["Main-Class"] = "me.mrfunny.minigame.minestom.Main"
+    }
 }
 
 tasks.test {

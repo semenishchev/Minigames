@@ -1,5 +1,12 @@
-package me.mrfunny.minigame.bedwars;
+package me.mrfunny.minigame.bedwars.setup;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import me.mrfunny.minigame.bedwars.instance.BedwarsGameTypes;
+import me.mrfunny.minigame.bedwars.instance.BedwarsStorage;
+import me.mrfunny.minigame.minestom.Main;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.builder.Command;
@@ -15,27 +22,38 @@ import net.minestom.server.instance.anvil.AnvilLoader;
 import net.minestom.server.world.DimensionType;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.UUID;
 
 public class BedwarsSetup extends InstanceContainer {
     private static BedwarsSetup instance;
+    private static ObjectMapper objectMapper;
     private final String mapName;
-    private BedwarsGameTypes gameType;
+    private static BedwarsMapConfig config;
 
     public BedwarsSetup(String mapName, IChunkLoader loader) {
         super(UUID.randomUUID(), DimensionType.OVERWORLD, loader);
         this.mapName = mapName;
     }
 
-    public static void init(String mapName, String setupArg) {
+    public static void init(String mapName, String worldOrSchematic) throws IOException {
         if(instance != null) return;
+        objectMapper = new ObjectMapper(new YAMLFactory()
+            .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+        ).findAndRegisterModules()
+            .enable(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS);
         instance = new BedwarsSetup(mapName, null);
-        if(setupArg != null) {
-            File setupFile = new File(setupArg);
+        File mapConfig = MinigameDeployment.getMapConfig(BedwarsStorage.COLLECTION_NAME, mapName);
+        if(worldOrSchematic != null) {
+            File setupFile = new File(worldOrSchematic);
             if(setupFile.exists() && setupFile.isDirectory()) {
-                AnvilLoader loader = new AnvilLoader(setupArg);
+                Main.LOGGER.info("Loading an anvil loader as initial world");
+                AnvilLoader loader = new AnvilLoader(worldOrSchematic);
                 instance.setChunkLoader(loader);
             }
+        }
+        if(mapConfig.exists()) {
+            config = objectMapper.readValue(mapConfig, BedwarsMapConfig.class);
         }
 
         MinigameDeployment.getMapSchematic(BedwarsStorage.COLLECTION_NAME, mapName);
@@ -50,6 +68,10 @@ public class BedwarsSetup extends InstanceContainer {
 
     private static void registerCommands() {
         MinecraftServer.getCommandManager().register();
+    }
+
+    private static void registerListeners() {
+
     }
 
     public static BedwarsSetup getInstance() {
@@ -67,7 +89,7 @@ public class BedwarsSetup extends InstanceContainer {
                     }
                 });
             addSyntax((sender, context) -> {
-                gameType = context.get(modeArgument);
+                BedwarsGameTypes gameType = context.get(modeArgument);
                 sender.sendMessage("Selected " + gameType.name() + "(" + gameType.getBalancerName() + ")");
             }, modeArgument);
         }

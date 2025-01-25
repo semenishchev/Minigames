@@ -7,6 +7,8 @@ pluginManagement {
     }
 }
 
+
+
 rootProject.name = "MinigameServer"
 include("minestom")
 include("api")

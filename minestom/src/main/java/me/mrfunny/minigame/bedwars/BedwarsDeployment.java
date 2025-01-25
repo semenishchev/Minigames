@@ -1,14 +1,13 @@
 package me.mrfunny.minigame.bedwars;
 
+import me.mrfunny.minigame.bedwars.instance.BedwarsGameTypes;
+import me.mrfunny.minigame.bedwars.instance.BedwarsInstance;
 import me.mrfunny.minigame.deployment.info.DeploymentInfo;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
-import me.mrfunny.minigame.minestom.instance.BalancedInstance;
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.IChunkLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.*;
 
 public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
