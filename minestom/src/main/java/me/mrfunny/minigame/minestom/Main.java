@@ -1,6 +1,10 @@
 package me.mrfunny.minigame.minestom;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import me.mrfunny.minigame.balancer.LoadBalancerClient;
 import me.mrfunny.minigame.balancer.impl.DebugBalancerClient;
 import me.mrfunny.minigame.bedwars.BedwarsDeployment;
@@ -25,7 +29,12 @@ import java.util.UUID;
 public class Main {
     public static DeploymentInfo deploymentInfo;
     public static Logger LOGGER;
+    public static ObjectMapper YAML;
     public static void main(String[] args) {
+        YAML = new ObjectMapper(new YAMLFactory()
+            .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+        ).findAndRegisterModules()
+            .enable(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS);
         MinecraftServer minecraftServer = MinecraftServer.init();
         MinecraftServer.setCompressionThreshold(0);
         MinecraftServer.setBrandName("Minigame");
@@ -40,8 +49,13 @@ public class Main {
                 String minigame = args[0].split("=")[1];
                 deploymentInfo = new DebugDeploymentInfo(minigame);
                 LOGGER = getLogger("setup");
-                LOGGER.info("Entering setup: " + args[0]);
-                loadSetup(minigame, args);
+                LOGGER.info("Entering setup: {}", args[0]);
+                try {
+                    loadSetup(minigame, args);
+                } catch(Exception e) {
+                    LOGGER.error("Failed entering setup", e);
+                    return;
+                }
                 minecraftServer.start("0.0.0.0", 25565);
                 return;
             }
@@ -81,15 +95,11 @@ public class Main {
         };
     }
 
-    private static void loadSetup(String minigame, String[] args) {
+    private static void loadSetup(String minigame, String[] args) throws Exception {
         if(args.length < 2) {
             throw new IllegalStateException("Invalid minigame arguments");
         }
-        try {
-            BedwarsSetup.init(args[1], args[2]);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        BedwarsSetup.init(args[1], args[2]);
     }
 
     public static Logger getLogger(String logger) {

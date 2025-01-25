@@ -8,11 +8,11 @@ import java.util.LinkedList;
 import java.util.function.Consumer;
 
 // todo: make it common
-public abstract class GameStage {
+public abstract class BedwarsStage {
     protected final BedwarsInstance instance;
     private final LinkedList<EventListener<? extends InstanceEvent>> registeredListeners = new LinkedList<>();
 
-    public GameStage(BedwarsInstance instance) {
+    public BedwarsStage(BedwarsInstance instance) {
         this.instance = instance;
     }
     public abstract void start();

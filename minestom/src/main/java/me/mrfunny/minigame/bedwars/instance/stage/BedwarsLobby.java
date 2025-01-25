@@ -6,8 +6,8 @@ import net.minestom.server.event.EventNode;
 import net.minestom.server.event.player.*;
 import net.minestom.server.event.trait.InstanceEvent;
 
-public class LobbyStage extends GameStage {
-    public LobbyStage(BedwarsInstance instance) {
+public class BedwarsLobby extends BedwarsStage {
+    public BedwarsLobby(BedwarsInstance instance) {
         super(instance);
     }
 

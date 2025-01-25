@@ -1,6 +1,6 @@
 package me.mrfunny.minigame.bedwars.team;
 
-import me.mrfunny.minigame.bedwars.data.PlayerData;
+import me.mrfunny.minigame.bedwars.data.BedwarsPlayerData;
 import me.mrfunny.minigame.common.TeamColor;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class BedwarsTeam {
-    private final Set<PlayerData> members = new HashSet<>();
+    private final Set<BedwarsPlayerData> members = new HashSet<>();
     private final TeamColor teamColor;
     private final Team minecraftTeam;
 
@@ -27,7 +27,7 @@ public class BedwarsTeam {
 
     }
 
-    public void addMember(PlayerData playerData) {
+    public void addMember(BedwarsPlayerData playerData) {
         if(playerData.getTeam() != null) {
             throw new IllegalArgumentException("This team is already a team");
         }
@@ -38,7 +38,7 @@ public class BedwarsTeam {
         members.add(playerData);
     }
 
-    public void removeMember(PlayerData playerData) {
+    public void removeMember(BedwarsPlayerData playerData) {
         if(playerData.getTeam() != null) {
             throw new IllegalArgumentException("This player exists on another team");
         }
@@ -50,7 +50,7 @@ public class BedwarsTeam {
         return teamColor;
     }
 
-    public Set<PlayerData> getMembers() {
+    public Set<BedwarsPlayerData> getMembers() {
         return members;
     }
 }

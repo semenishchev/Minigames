@@ -1,5 +1,7 @@
 package me.mrfunny.minigame.common;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -36,14 +38,12 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
     private final File folder;
     private final boolean save;
     private final Long2ObjectMap<byte[]> cachedChunkData = new Long2ObjectOpenHashMap<>();
-    private final Biome biome;
     private final int biomeId;
 
-    public ChunkPerFileChunkLoader(UUID instanceId, File folder, boolean save, Biome biome) {
+    public ChunkPerFileChunkLoader(UUID instanceId, File folder, boolean save, DynamicRegistry.Key<Biome> biome) {
         this.folder = folder;
         this.save = save;
-        this.biome = biome;
-        this.biomeId = MinecraftServer.getBiomeRegistry().getId(biome.registry().namespace());
+        this.biomeId = MinecraftServer.getBiomeRegistry().getId(biome.namespace());
         this.logger = Main.getLogger("chunk-loader-" + instanceId.toString().substring(0, 8));
     }
 
@@ -220,7 +220,6 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
     @Override
     public void saveChunk(@NotNull Chunk chunk) {
         if(!save) return;
-        logger.info("Saving chunks");
         int chunkX = chunk.getChunkX();
         int chunkZ = chunk.getChunkZ();
         File chunkFile = new File(folder, chunkX + "_" + chunkZ + ".dat");
@@ -230,25 +229,26 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
             if(!parent.exists()) parent.mkdirs();
             out = new DeflaterOutputStream(new FileOutputStream(chunkFile), new Deflater(9), true);
         } catch (IOException e) {
-            logger.info("Failed to save chunk {} {}", chunkX, chunkZ, e);
-        } finally {
-            if(out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    logger.error("Failed to close {} {}", chunkX, chunkZ, e);
-                }
-            }
+            logger.error("Failed to create chunk file {} {}", chunkX, chunkZ, e);
         }
+        if(out == null) return;
         final CompoundBinaryTag.Builder chunkData = CompoundBinaryTag.builder();
 
         chunkData.putInt("DataVersion", MinecraftServer.DATA_VERSION);
         chunkData.putString("status", "minecraft:full");
 
-        saveSectionData(chunk, chunkData);
+        if(!saveSectionData(chunk, chunkData)) {
+            logger.info("Skipping empty chunk {} {}", chunkX, chunkZ);
+            return;
+        }
+        try {
+            BinaryTagIO.writer().write(chunkData.build(), out);
+        } catch(IOException e) {
+            logger.error("Failed to write chunk data {} {}", chunkX, chunkZ, e);
+        }
     }
 
-    private void saveSectionData(@NotNull Chunk chunk, @NotNull CompoundBinaryTag.Builder chunkData) {
+    private boolean saveSectionData(@NotNull Chunk chunk, @NotNull CompoundBinaryTag.Builder chunkData) {
         final ListBinaryTag.Builder<CompoundBinaryTag> sections = ListBinaryTag.builder(BinaryTagTypes.COMPOUND);
         final ListBinaryTag.Builder<CompoundBinaryTag> blockEntities = ListBinaryTag.builder(BinaryTagTypes.COMPOUND);
 
@@ -259,7 +259,7 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
         List<BinaryTag> blockPaletteEntries = new ArrayList<>();
         IntList blockPaletteIndices = new IntArrayList(); // Map block indices by state id to avoid doing a deep comparison on every block tag
         int[] blockIndices = new int[Chunk.CHUNK_SECTION_SIZE * Chunk.CHUNK_SECTION_SIZE * Chunk.CHUNK_SECTION_SIZE];
-
+        boolean empty = true;
         synchronized (chunk) {
             for (int sectionY = chunk.getMinSection(); sectionY < chunk.getMaxSection(); sectionY++) {
                 final Section section = chunk.getSection(sectionY);
@@ -287,6 +287,9 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
                             // Add block state
                             final int blockStateId = block.stateId();
                             final CompoundBinaryTag blockState = getBlockState(block);
+                            if(empty && blockState != null && !blockState.getString("Name", "minecraft:air").equalsIgnoreCase("minecraft:air")) {
+                                empty = false;
+                            }
                             int blockPaletteIndex = blockPaletteIndices.indexOf(blockStateId);
                             if (blockPaletteIndex == -1) {
                                 blockPaletteIndex = blockPaletteEntries.size();
@@ -330,7 +333,6 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
                         }
                     }
                 }
-
                 // Save the block and biome palettes
                 final CompoundBinaryTag.Builder blockStates = CompoundBinaryTag.builder();
                 blockStates.put("palette", ListBinaryTag.listBinaryTag(BinaryTagTypes.COMPOUND, blockPaletteEntries));
@@ -338,19 +340,10 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
                     // If there is only one entry we do not need to write the packed indices
                     var bitsPerEntry = (int) Math.max(4, Math.ceil(Math.log(blockPaletteEntries.size()) / Math.log(2)));
                     blockStates.putLongArray("data", Palettes.pack(blockIndices, bitsPerEntry));
+                    empty = false;
                 }
                 sectionData.put("block_states", blockStates.build());
 
-                final CompoundBinaryTag.Builder biomes = CompoundBinaryTag.builder();
-                biomes.put("palette", ListBinaryTag.listBinaryTag(BinaryTagTypes.STRING, biomePalette));
-                if (biomePalette.size() > 1) {
-                    // If there is only one entry we do not need to write the packed indices
-                    var bitsPerEntry = (int) Math.max(1, Math.ceil(Math.log(biomePalette.size()) / Math.log(2)));
-                    biomes.putLongArray("data", Palettes.pack(biomeIndices, bitsPerEntry));
-                }
-                sectionData.put("biomes", biomes.build());
-
-                biomePalette.clear();
                 blockPaletteEntries.clear();
                 blockPaletteIndices.clear();
 
@@ -360,30 +353,31 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
 
         chunkData.put("sections", sections.build());
         chunkData.put("block_entities", blockEntities.build());
+        return !empty;
     }
 
+    private final ThreadLocal<Int2ObjectMap<CompoundBinaryTag>> blockStateId2ObjectCacheTLS = ThreadLocal.withInitial(Int2ObjectArrayMap::new);
     private CompoundBinaryTag getBlockState(final Block block) {
-//        return blockStateId2ObjectCacheTLS.get().computeIfAbsent(block.stateId(), _unused -> {
-//            final CompoundBinaryTag.Builder tag = CompoundBinaryTag.builder();
-//            tag.putString("Name", block.name());
-//
-//            if (!block.properties().isEmpty()) {
-//                final Map<String, String> defaultProperties = Block.fromBlockId(block.id()).properties(); // Never null
-//                final CompoundBinaryTag.Builder propertiesTag = CompoundBinaryTag.builder();
-//                for (var entry : block.properties().entrySet()) {
-//                    String key = entry.getKey(), value = entry.getValue();
-//                    if (defaultProperties.get(key).equals(value))
-//                        continue; // Skip default values
-//
-//                    propertiesTag.putString(key, value);
-//                }
-//                var properties = propertiesTag.build();
-//                if (properties.size() > 0) {
-//                    tag.put("Properties", properties);
-//                }
-//            }
-//            return tag.build();
-//        });
-        return null; // fixme
+        return blockStateId2ObjectCacheTLS.get().computeIfAbsent(block.stateId(), _unused -> {
+            final CompoundBinaryTag.Builder tag = CompoundBinaryTag.builder();
+            tag.putString("Name", block.name());
+
+            if (!block.properties().isEmpty()) {
+                final Map<String, String> defaultProperties = Block.fromBlockId(block.id()).properties(); // Never null
+                final CompoundBinaryTag.Builder propertiesTag = CompoundBinaryTag.builder();
+                for (var entry : block.properties().entrySet()) {
+                    String key = entry.getKey(), value = entry.getValue();
+                    if (defaultProperties.get(key).equals(value))
+                        continue; // Skip default values
+
+                    propertiesTag.putString(key, value);
+                }
+                var properties = propertiesTag.build();
+                if (properties.size() > 0) {
+                    tag.put("Properties", properties);
+                }
+            }
+            return tag.build();
+        });
     }
 }

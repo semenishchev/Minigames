@@ -2,16 +2,15 @@ package me.mrfunny.minigame.bedwars.data;
 
 import me.mrfunny.minigame.bedwars.team.BedwarsTeam;
 import net.minestom.server.entity.Player;
-import net.minestom.server.scoreboard.Team;
 
 import java.lang.ref.WeakReference;
 
-public class PlayerData {
+public class BedwarsPlayerData {
     private final WeakReference<Player> player;
     private final String username;
     private BedwarsTeam memberOf;
 
-    public PlayerData(Player player) {
+    public BedwarsPlayerData(Player player) {
         this.player = new WeakReference<>(player);
         this.username = player.getUsername();
     }

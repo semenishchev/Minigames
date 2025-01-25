@@ -5,7 +5,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.coordinate.Pos;
 
-public class GeneratorData {
+public class BedwarsGeneratorData {
     public enum GeneratorType {
         IRON(Component.translatable("generator.iron", "Iron", NamedTextColor.WHITE)),
         GOLD(Component.translatable("generator.gold", "Gold", NamedTextColor.GOLD)),
@@ -24,12 +24,12 @@ public class GeneratorData {
 
     public static class StandardGeneratorRuntimeData {
         @JsonIgnore
-        public GeneratorData.GeneratorType type;
+        public BedwarsGeneratorData.GeneratorType type;
         public int spawnPeriod = 20; // ticks
         public int itemsPerSpawn = 1;
 
         public StandardGeneratorRuntimeData() {}
-        public StandardGeneratorRuntimeData(GeneratorData.GeneratorType type, int spawnPeriod, int itemsPerSpawn) {
+        public StandardGeneratorRuntimeData(BedwarsGeneratorData.GeneratorType type, int spawnPeriod, int itemsPerSpawn) {
             this.type = type;
             this.spawnPeriod = spawnPeriod;
             this.itemsPerSpawn = itemsPerSpawn;
@@ -39,9 +39,9 @@ public class GeneratorData {
     public GeneratorType type;
     public Pos pos;
 
-    public GeneratorData() {}
+    public BedwarsGeneratorData() {}
 
-    public GeneratorData(GeneratorType type, Pos pos, boolean showHologram) {
+    public BedwarsGeneratorData(GeneratorType type, Pos pos, boolean showHologram) {
         this.type = type;
         this.pos = pos;
     }
