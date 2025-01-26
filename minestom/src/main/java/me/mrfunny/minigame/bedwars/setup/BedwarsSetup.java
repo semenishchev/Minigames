@@ -15,16 +15,15 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.command.builder.arguments.ArgumentType;
 import net.minestom.server.command.builder.suggestion.SuggestionEntry;
-import net.minestom.server.coordinate.BlockVec;
-import net.minestom.server.coordinate.CoordConversion;
-import net.minestom.server.coordinate.Point;
-import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.*;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
+import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.instance.Chunk;
-import net.minestom.server.instance.IChunkLoader;
 import net.minestom.server.instance.InstanceContainer;
+import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.instance.anvil.AnvilLoader;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.world.DimensionType;
@@ -34,8 +33,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,6 +46,7 @@ public class BedwarsSetup extends InstanceContainer {
     private static String mapName;
     private static File mapWorld;
     private static ChunkPerFileChunkLoader minigameChunkLoader;
+    private static Map<UUID, BedwarsSetupPlayerData> playerData = new HashMap<>();
 
     public BedwarsSetup() {
         super(UUID.randomUUID(), DimensionType.OVERWORLD);
@@ -55,10 +55,17 @@ public class BedwarsSetup extends InstanceContainer {
     public static void init(String mapName, String worldOrSchematic) throws Exception {
         if(instance != null) return;
         instance = new BedwarsSetup();
+        instance.setChunkSupplier(LightingChunk::new);
         BedwarsSetup.mapName = mapName;
         BedwarsEventRegistry.initRegistries(new File(BedwarsStorage.COLLECTION_NAME, "events"));
         File mapConfig = MinigameDeployment.getMapConfig(BedwarsStorage.COLLECTION_NAME, mapName);
         configFile = mapConfig;
+        if(mapConfig.exists()) {
+            config = Main.YAML.readValue(mapConfig, BedwarsMapConfig.class);
+        } else {
+            Main.LOGGER.info("Creating an empty config");
+            config = new BedwarsMapConfig();
+        }
         File worldFile = MinigameDeployment.getMapWorld(BedwarsStorage.COLLECTION_NAME, mapName);
         if(!worldFile.exists()) {
             worldFile.mkdirs();
@@ -74,7 +81,8 @@ public class BedwarsSetup extends InstanceContainer {
                 File checker = new File(setupFile, "level.dat");
                 if(checker.exists()) {
                     Main.LOGGER.info("Using an anvil loader as initial world");
-                    instance.setChunkLoader(new AnvilLoader(worldOrSchematic));
+                    AnvilLoader chunkLoader = new AnvilLoader(worldOrSchematic);
+                    instance.setChunkLoader(chunkLoader);
                 } else {
                     Main.LOGGER.info("Using minigame chunk loader for edit");
                     instance.setChunkLoader(minigameChunkLoader);
@@ -116,6 +124,7 @@ public class BedwarsSetup extends InstanceContainer {
                     for(Map.Entry<BlockVec, Block> update : entry.getValue().entrySet()) {
                         chunk.setBlock(update.getKey(), update.getValue());
                     }
+//                    LightingChunk.relight(instance, List.of(chunk));
                 }
                 Main.LOGGER.info("Loaded {} chunks", instance.getChunks().size());
                 Main.LOGGER.info("Using minigame chunk loader");
@@ -123,16 +132,17 @@ public class BedwarsSetup extends InstanceContainer {
                 Main.LOGGER.info("Done");
             }
         }
-        if(mapConfig.exists()) {
-            config = Main.YAML.readValue(mapConfig, BedwarsMapConfig.class);
-        }
 
         MinecraftServer.getInstanceManager().registerInstance(instance);
-        MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent.class, event -> {
+        GlobalEventHandler handler = MinecraftServer.getGlobalEventHandler();
+        handler.addListener(AsyncPlayerConfigurationEvent.class, event -> {
             Player player = event.getPlayer();
             event.setSpawningInstance(instance);
             player.setGameMode(GameMode.CREATIVE);
             player.setRespawnPoint(new Pos(0, 100, 0));
+        });
+        handler.addListener(PlayerDisconnectEvent.class, event -> {
+            playerData.remove(event.getPlayer().getUuid());
         });
     }
 
@@ -140,7 +150,8 @@ public class BedwarsSetup extends InstanceContainer {
         MinecraftServer.getCommandManager().register(
             new SelectModeCommand(),
             new SelectStandardEvent(),
-            new SaveCommand()
+            new SaveCommand(),
+            new PosCommand()
         );
     }
 
@@ -151,12 +162,12 @@ public class BedwarsSetup extends InstanceContainer {
     public static class SelectModeCommand extends Command {
         public SelectModeCommand() {
             super("selectmode");
-            var modeArgument = ArgumentType.Enum("mode", BedwarsGameTypes.class)
-                .setSuggestionCallback((sender, context, suggestion) -> {
-                    for(BedwarsGameTypes value : BedwarsGameTypes.values()) {
-                        suggestion.addEntry(new SuggestionEntry(value.name()));
-                    }
-                });
+            var modeArgument = ArgumentType.Enum("mode", BedwarsGameTypes.class);
+//                .setSuggestionCallback((sender, context, suggestion) -> {
+//                    for(BedwarsGameTypes value : BedwarsGameTypes.values()) {
+//                        suggestion.addEntry(new SuggestionEntry(value.name()));
+//                    }
+//                });
             addSyntax((sender, context) -> {
                 BedwarsGameTypes gameType = context.get(modeArgument);
                 config.gameType = gameType;
@@ -196,14 +207,63 @@ public class BedwarsSetup extends InstanceContainer {
                     Main.LOGGER.error("Failed to save map config {}", mapName, e);
                     sender.sendMessage("Failed to save. Check console");
                 }
-                for(@NotNull Chunk chunk : instance.getChunks()) {
-                    try {
-                        minigameChunkLoader.saveChunk(chunk);
-                    } catch(Exception e) {
-                        Main.LOGGER.error("Failed to save chunk {} {}", chunk.getChunkX(), chunk.getChunkZ(), e);
+                if(config.mapMin == null) {
+                    sender.sendMessage("Don't saving map because map minimum point is not set");
+                    return;
+                }
+                if(config.mapMax == null) {
+                    sender.sendMessage("Don't saving map because map maximum point is not set");
+                    return;
+                }
+                int minChunkX = config.mapMin.chunkX();
+                int minChunkZ = config.mapMin.chunkZ();
+                int maxChunkX = config.mapMax.chunkX();
+                int maxChunkZ = config.mapMax.chunkZ();
+                for(int x = minChunkX; x <= maxChunkX; x++) {
+                    for(int z = minChunkZ; z <= maxChunkZ; z++) {
+                        Chunk chunk = instance.loadChunk(x, z).join();
+                        try {
+                            minigameChunkLoader.saveChunk(chunk);
+                        } catch(Exception e) {
+                            Main.LOGGER.error("Failed to save chunk {} {}", chunk.getChunkX(), chunk.getChunkZ(), e);
+                        }
                     }
                 }
             });
         }
+    }
+
+    public static class PosClickCommand extends Command {
+        public PosClickCommand() {
+            super("pos-click");
+            var posArgument = ArgumentType.Enum("position-type", PositionTypes.class);
+            addSyntax((sender, context) -> {
+                if(!(sender instanceof Player player)) return;
+                PositionTypes type = context.get(posArgument);
+                sender.sendMessage("Click on block with a stick you want to be " + type);
+            });
+        }
+    }
+    public static class PosCommand extends Command {
+        public PosCommand() {
+            super("pos");
+            var posArgument = ArgumentType.Enum("position-type", PositionTypes.class);
+            addSyntax((sender, context) -> {
+                if(!(sender instanceof Player player)) return;
+                PositionTypes type = context.get(posArgument);
+                Pos pos = player.getPosition();
+                pos = new Pos(pos.blockX(), pos.blockY(), pos.blockZ());
+                switch(type) {
+
+                }
+                sender.sendMessage("Updated position " + type + " to " + pos);
+            });
+        }
+    }
+
+    public static BedwarsSetupPlayerData getPlayerData(Player player) {
+        return playerData.computeIfAbsent(player.getUuid(), p -> {
+            return new BedwarsSetupPlayerData(player);
+        });
     }
 }

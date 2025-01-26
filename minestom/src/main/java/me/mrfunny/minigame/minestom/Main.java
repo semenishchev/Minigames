@@ -54,6 +54,7 @@ public class Main {
                     loadSetup(minigame, args);
                 } catch(Exception e) {
                     LOGGER.error("Failed entering setup", e);
+                    System.exit(1);
                     return;
                 }
                 minecraftServer.start("0.0.0.0", 25565);

@@ -13,9 +13,11 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     include("net.minestom:minestom-snapshots:0d47d97417")
+    include("ch.qos.logback:logback-classic:1.5.16")
     include("dev.hollowcube:schem:1.3.1")
     include("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.2")
     include(project(":api"))
+    include(project(":assets"))
 }
 
 tasks.withType<Jar> {

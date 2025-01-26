@@ -1,16 +1,19 @@
 package me.mrfunny.minigame.bedwars.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import me.mrfunny.minigame.Translations;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.coordinate.Pos;
 
+import javax.naming.Name;
+
 public class BedwarsGeneratorData {
     public enum GeneratorType {
-        IRON(Component.translatable("generator.iron", "Iron", NamedTextColor.WHITE)),
-        GOLD(Component.translatable("generator.gold", "Gold", NamedTextColor.GOLD)),
-        DIAMOND(Component.translatable("generator.diamond", "Diamond", NamedTextColor.AQUA)),
-        EMERALD(Component.translatable("generator.emerald", "Emerald", NamedTextColor.DARK_GREEN)),;
+        IRON(Translations.BEDWARS_IRON_GENERATOR.color(NamedTextColor.WHITE)),
+        GOLD(Translations.BEDWARS_GOLD_GENERATOR.color(NamedTextColor.GOLD)),
+        DIAMOND(Translations.BEDWARS_DIAMOND_GENERATOR.color(NamedTextColor.AQUA)),
+        EMERALD(Translations.BEDWARS_EMERALD_GENERATOR.color(NamedTextColor.DARK_GREEN));
         private final Component name;
 
         GeneratorType(Component name) {

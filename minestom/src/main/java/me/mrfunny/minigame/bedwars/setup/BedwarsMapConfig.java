@@ -13,6 +13,8 @@ import java.util.Map;
 public class BedwarsMapConfig {
     public String mapName;
     public String mapBiome;
+    public Pos mapMin;
+    public Pos mapMax;
     public Pos lobbyPos;
     public BedwarsGameTypes gameType;
     public Map<TeamColor, BedwarsTeamData> teams;
