@@ -2,7 +2,8 @@
     <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>[%d{HH:mm:ss} %level] [%logger]: %msg%n</pattern>
+            <pattern>%highlight([%d{HH:mm:ss} %level] [%logger]: %msg%n)</pattern>
+            <withJansi>true</withJansi>
         </encoder>
     </appender>
 

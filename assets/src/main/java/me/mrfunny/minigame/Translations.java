@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Translations {
+    private static List<Component> allTranslations;
     public static final Component BEDWARS_IRON_GENERATOR = translation("bedwars.generator.iron", "Iron Generator");
     public static final Component BEDWARS_GOLD_GENERATOR = translation("bedwars.generator.gold", "Gold Generator");
     public static final Component BEDWARS_DIAMOND_GENERATOR = translation("bedwars.generator.diamond", "Diamond Generator");
@@ -52,9 +53,10 @@ public class Translations {
     }
     private static Component translation(String key, String fallback) {
         Component component = Component.translatable(key, fallback);
+        if(allTranslations == null) {
+            allTranslations = new LinkedList<>();
+        }
         allTranslations.add(component);
         return component;
     }
-
-    private static final List<Component> allTranslations = new LinkedList<>();
 }

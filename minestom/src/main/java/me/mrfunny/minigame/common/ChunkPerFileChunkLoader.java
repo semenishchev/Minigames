@@ -246,6 +246,11 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
         } catch(IOException e) {
             logger.error("Failed to write chunk data {} {}", chunkX, chunkZ, e);
         }
+        try {
+            out.close();
+        } catch(IOException e) {
+            logger.error("Failed to close chunk data {} {}", chunkX, chunkZ, e);
+        }
     }
 
     private boolean saveSectionData(@NotNull Chunk chunk, @NotNull CompoundBinaryTag.Builder chunkData) {

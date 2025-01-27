@@ -9,7 +9,6 @@ import net.minestom.server.coordinate.Pos;
 
 import java.util.List;
 import java.util.Map;
-
 public class BedwarsMapConfig {
     public String mapName;
     public String mapBiome;

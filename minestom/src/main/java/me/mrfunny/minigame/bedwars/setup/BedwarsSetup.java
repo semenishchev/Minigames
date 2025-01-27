@@ -67,12 +67,15 @@ public class BedwarsSetup extends InstanceContainer {
             config = new BedwarsMapConfig();
         }
         File worldFile = MinigameDeployment.getMapWorld(BedwarsStorage.COLLECTION_NAME, mapName);
-        if(!worldFile.exists()) {
-            worldFile.mkdirs();
+        if(!worldFile.exists() && worldOrSchematic == null) {
+            throw new IllegalArgumentException(mapName + " does not have a world yet. Provide a path in a 3rd argument to a schematic or regular mc world to use as a reference");
         }
         mapWorld = worldFile;
         minigameChunkLoader = new ChunkPerFileChunkLoader(instance.getUniqueId(), worldFile, true, Biome.PLAINS);
         if(worldOrSchematic != null) {
+            if(worldFile.exists()) {
+                Main.LOGGER.warn("Loading an external world as reference, but map world already exists. Stop the server if this is a mistake");
+            }
             File setupFile = new File(worldOrSchematic);
             if(!setupFile.exists()) {
                 throw new FileNotFoundException("Map folder doesn't exist");
@@ -124,10 +127,9 @@ public class BedwarsSetup extends InstanceContainer {
                     for(Map.Entry<BlockVec, Block> update : entry.getValue().entrySet()) {
                         chunk.setBlock(update.getKey(), update.getValue());
                     }
-//                    LightingChunk.relight(instance, List.of(chunk));
                 }
                 Main.LOGGER.info("Loaded {} chunks", instance.getChunks().size());
-                Main.LOGGER.info("Using minigame chunk loader");
+                Main.LOGGER.info("Using minigame chunk loader for further edits");
                 instance.setChunkLoader(minigameChunkLoader);
                 Main.LOGGER.info("Done");
             }
@@ -144,6 +146,7 @@ public class BedwarsSetup extends InstanceContainer {
         handler.addListener(PlayerDisconnectEvent.class, event -> {
             playerData.remove(event.getPlayer().getUuid());
         });
+        registerCommands();
     }
 
     private static void registerCommands() {
@@ -151,7 +154,8 @@ public class BedwarsSetup extends InstanceContainer {
             new SelectModeCommand(),
             new SelectStandardEvent(),
             new SaveCommand(),
-            new PosCommand()
+            new PosCommand(),
+            new PosClickCommand()
         );
     }
 
@@ -163,11 +167,6 @@ public class BedwarsSetup extends InstanceContainer {
         public SelectModeCommand() {
             super("selectmode");
             var modeArgument = ArgumentType.Enum("mode", BedwarsGameTypes.class);
-//                .setSuggestionCallback((sender, context, suggestion) -> {
-//                    for(BedwarsGameTypes value : BedwarsGameTypes.values()) {
-//                        suggestion.addEntry(new SuggestionEntry(value.name()));
-//                    }
-//                });
             addSyntax((sender, context) -> {
                 BedwarsGameTypes gameType = context.get(modeArgument);
                 config.gameType = gameType;
@@ -201,7 +200,7 @@ public class BedwarsSetup extends InstanceContainer {
             super("save");
             setDefaultExecutor((sender, context) -> {
                 try {
-                    Main.YAML.writeValue(configFile, config);
+//                    Main.YAML.writeValue(configFile, config);
                     sender.sendMessage("Saved");
                 } catch(Exception e) {
                     Main.LOGGER.error("Failed to save map config {}", mapName, e);
@@ -241,7 +240,7 @@ public class BedwarsSetup extends InstanceContainer {
                 if(!(sender instanceof Player player)) return;
                 PositionTypes type = context.get(posArgument);
                 sender.sendMessage("Click on block with a stick you want to be " + type);
-            });
+            }, posArgument);
         }
     }
     public static class PosCommand extends Command {
@@ -252,12 +251,13 @@ public class BedwarsSetup extends InstanceContainer {
                 if(!(sender instanceof Player player)) return;
                 PositionTypes type = context.get(posArgument);
                 Pos pos = player.getPosition();
-                pos = new Pos(pos.blockX(), pos.blockY(), pos.blockZ());
+                pos = new Pos(pos.blockX(), pos.blockY(), pos.blockZ(), pos.yaw(), pos.pitch());
                 switch(type) {
-
+                    case MAP_MAX -> config.mapMax = pos;
+                    case MAP_MIN -> config.mapMin = pos;
                 }
                 sender.sendMessage("Updated position " + type + " to " + pos);
-            });
+            }, posArgument);
         }
     }
 

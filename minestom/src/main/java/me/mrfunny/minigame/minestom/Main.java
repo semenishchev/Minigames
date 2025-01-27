@@ -100,7 +100,7 @@ public class Main {
         if(args.length < 2) {
             throw new IllegalStateException("Invalid minigame arguments");
         }
-        BedwarsSetup.init(args[1], args[2]);
+        BedwarsSetup.init(args[1], args.length >= 3 ? args[2] : null);
     }
 
     public static Logger getLogger(String logger) {
