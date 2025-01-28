@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import me.mrfunny.minigame.bedwars.setup.BedwarsSetup;
 import me.mrfunny.minigame.minestom.Main;
 import net.kyori.adventure.nbt.*;
 import net.minestom.server.MinecraftServer;
@@ -18,8 +19,6 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.instance.palette.Palettes;
 import net.minestom.server.registry.DynamicRegistry;
-import net.minestom.server.registry.Registries;
-import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.validate.Check;
 import net.minestom.server.world.biome.Biome;
 import org.jetbrains.annotations.NotNull;
@@ -29,50 +28,48 @@ import org.slf4j.Logger;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.InflaterOutputStream;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.zip.*;
 
 public class ChunkPerFileChunkLoader implements IChunkLoader {
     private final Logger logger;
-    private final File folder;
+    private final File mapFile;
     private final boolean save;
     private final Long2ObjectMap<byte[]> cachedChunkData = new Long2ObjectOpenHashMap<>();
     private final int biomeId;
+    private ZipOutputStream output;
 
-    public ChunkPerFileChunkLoader(UUID instanceId, File folder, boolean save, DynamicRegistry.Key<Biome> biome) {
-        this.folder = folder;
+    public ChunkPerFileChunkLoader(UUID instanceId, File file, boolean save, DynamicRegistry.Key<Biome> biome) throws IOException {
+        this.mapFile = file;
         this.save = save;
         this.biomeId = MinecraftServer.getBiomeRegistry().getId(biome.namespace());
         this.logger = Main.getLogger("chunk-loader-" + instanceId.toString().substring(0, 8));
+        if(!file.exists()) return;
+        if(!file.isFile()) {
+            throw new IOException("Target file is a directory");
+        }
+        ZipFile input = new ZipFile(file);
+        Enumeration<? extends ZipEntry> entries = input.entries();
+        while(entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            String name = entry.getName();
+            String[] data = name.split("_");
+            if(data.length != 2) {
+                throw new IOException("Invalid chunk entry: " + name);
+            }
+            int x = Integer.parseInt(data[0]);
+            int z = Integer.parseInt(data[1]);
+            InputStream inputStream = input.getInputStream(entry);
+            cachedChunkData.put(CoordConversion.chunkIndex(x, z), inputStream.readAllBytes());
+            inputStream.close();
+        }
+        input.close();
     }
 
     @Override
     public @Nullable Chunk loadChunk(@NotNull Instance instance, int chunkX, int chunkZ) {
         long pos = CoordConversion.chunkIndex(chunkX, chunkZ);
-        byte[] chunkDataBytes = cachedChunkData.computeIfAbsent(pos, p -> {
-            File chunkFile = new File(folder, chunkX + "_" + chunkZ + ".dat");
-            if (!chunkFile.exists()) return null;
-            InflaterOutputStream inflaterOutputStream  = null;
-            try {
-                byte[] compressed = Files.readAllBytes(chunkFile.toPath());
-                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                inflaterOutputStream = new InflaterOutputStream(bytes);
-                inflaterOutputStream.write(compressed);
-                return bytes.toByteArray();
-            } catch (Exception e) {
-                logger.error("Failed loading chunk {} {}", chunkX, chunkZ, e);
-            } finally {
-                if(inflaterOutputStream != null) {
-                    try {
-                        inflaterOutputStream.close();
-                    } catch (IOException e) {
-                        logger.error("Failed to close stream", e);
-                    }
-                }
-            }
-           return null;
-        });
+        byte[] chunkDataBytes = cachedChunkData.get(pos);
         if(chunkDataBytes == null) return null;
         try {
             CompoundBinaryTag chunkData = BinaryTagIO.unlimitedReader().read(new ByteArrayInputStream(chunkDataBytes));
@@ -222,34 +219,19 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
         if(!save) return;
         int chunkX = chunk.getChunkX();
         int chunkZ = chunk.getChunkZ();
-        File chunkFile = new File(folder, chunkX + "_" + chunkZ + ".dat");
-        DeflaterOutputStream out = null;
-        try {
-            File parent = chunkFile.getParentFile();
-            if(!parent.exists()) parent.mkdirs();
-            out = new DeflaterOutputStream(new FileOutputStream(chunkFile), new Deflater(9), true);
-        } catch (IOException e) {
-            logger.error("Failed to create chunk file {} {}", chunkX, chunkZ, e);
-        }
-        if(out == null) return;
         final CompoundBinaryTag.Builder chunkData = CompoundBinaryTag.builder();
 
         chunkData.putInt("DataVersion", MinecraftServer.DATA_VERSION);
         chunkData.putString("status", "minecraft:full");
-
         if(!saveSectionData(chunk, chunkData)) {
-            logger.info("Skipping empty chunk {} {}", chunkX, chunkZ);
             return;
         }
+        ZipEntry entry = new ZipEntry(chunkX + "_" + chunkZ);
         try {
-            BinaryTagIO.writer().write(chunkData.build(), out);
+            output.putNextEntry(entry);
+            BinaryTagIO.writer().write(chunkData.build(), output);
         } catch(IOException e) {
             logger.error("Failed to write chunk data {} {}", chunkX, chunkZ, e);
-        }
-        try {
-            out.close();
-        } catch(IOException e) {
-            logger.error("Failed to close chunk data {} {}", chunkX, chunkZ, e);
         }
     }
 
@@ -384,5 +366,28 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
             }
             return tag.build();
         });
+    }
+    private ReentrantLock writeLock = new ReentrantLock();
+    public void beginWrite() throws IOException {
+        writeLock.lock();
+        output = new ZipOutputStream(new FileOutputStream(this.mapFile));
+    }
+
+    public void endWrite() throws IOException {
+        try {
+            if(output != null) {
+                output.close();
+            }
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    public void loadAllChunks(BedwarsSetup instance) {
+        for(long chunkPos : cachedChunkData.keySet()) {
+            int x = CoordConversion.chunkIndexGetX(chunkPos);
+            int z = CoordConversion.chunkIndexGetZ(chunkPos);
+            instance.loadChunk(x, z).join();
+        }
     }
 }

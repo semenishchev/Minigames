@@ -3,6 +3,7 @@ package me.mrfunny.minigame.minestom;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import me.mrfunny.minigame.balancer.LoadBalancerClient;
@@ -14,7 +15,10 @@ import me.mrfunny.minigame.deployment.info.DebugDeploymentInfo;
 import me.mrfunny.minigame.deployment.info.DeploymentInfo;
 import me.mrfunny.minigame.deployment.info.PterodactylDeploymentInfo;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
+import me.mrfunny.minigame.minestom.serial.PosDeserializer;
+import me.mrfunny.minigame.minestom.serial.PosSerializer;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
@@ -35,6 +39,10 @@ public class Main {
             .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
         ).findAndRegisterModules()
             .enable(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS);
+        YAML.registerModule(new SimpleModule()
+            .addSerializer(Point.class, new PosSerializer())
+            .addDeserializer(Point.class, new PosDeserializer())
+        );
         MinecraftServer minecraftServer = MinecraftServer.init();
         MinecraftServer.setCompressionThreshold(0);
         MinecraftServer.setBrandName("Minigame");

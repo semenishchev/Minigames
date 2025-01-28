@@ -7,6 +7,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/assets/MinigameServer.assets.main.iml" filepath="$PROJECT_DIR$/.idea/modules/assets/MinigameServer.assets.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/minestom/MinigameServer.minestom.main.iml" filepath="$PROJECT_DIR$/.idea/modules/minestom/MinigameServer.minestom.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/minestom/MinigameServer.minestom.test.iml" filepath="$PROJECT_DIR$/.idea/modules/minestom/MinigameServer.minestom.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/assets/me.mrfunny.minigame.MinigameServer.assets.main.iml" filepath="$PROJECT_DIR$/.idea/modules/assets/me.mrfunny.minigame.MinigameServer.assets.main.iml" />
     </modules>
   </component>
 </project>
