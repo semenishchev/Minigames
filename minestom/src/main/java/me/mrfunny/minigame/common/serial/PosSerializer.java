@@ -1,4 +1,4 @@
-package me.mrfunny.minigame.minestom.serial;
+package me.mrfunny.minigame.common.serial;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;

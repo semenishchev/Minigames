@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import me.mrfunny.minigame.Translations;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 
 import javax.naming.Name;
+import java.util.UUID;
 
 public class BedwarsGeneratorData {
     public enum GeneratorType {
@@ -38,13 +40,18 @@ public class BedwarsGeneratorData {
             this.itemsPerSpawn = itemsPerSpawn;
         }
     }
-
+    public UUID uuid;
     public GeneratorType type;
-    public Pos pos;
+    public Point pos;
 
     public BedwarsGeneratorData() {}
 
-    public BedwarsGeneratorData(GeneratorType type, Pos pos, boolean showHologram) {
+    public BedwarsGeneratorData(GeneratorType type, Point pos) {
+        this(type, pos, type == GeneratorType.EMERALD || type == GeneratorType.DIAMOND);
+        this.uuid = UUID.randomUUID();
+    }
+
+    public BedwarsGeneratorData(GeneratorType type, Point pos, boolean showHologram) {
         this.type = type;
         this.pos = pos;
     }

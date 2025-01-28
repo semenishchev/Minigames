@@ -1,30 +1,31 @@
 package me.mrfunny.minigame.bedwars;
 
-import me.mrfunny.minigame.bedwars.event.BedwarsEventRegistry;
 import me.mrfunny.minigame.bedwars.instance.BedwarsGameTypes;
 import me.mrfunny.minigame.bedwars.instance.BedwarsInstance;
-import me.mrfunny.minigame.bedwars.instance.BedwarsStorage;
+import me.mrfunny.minigame.bedwars.registry.BedwarsRegistry;
 import me.mrfunny.minigame.deployment.info.DeploymentInfo;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import net.minestom.server.instance.IChunkLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
     public BedwarsDeployment(DeploymentInfo deploymentInfo) {
         super(deploymentInfo);
-        BedwarsEventRegistry.initRegistries(new File(BedwarsStorage.COLLECTION_NAME, "events"));
+        BedwarsRegistry.init();
     }
 
     @Override
-    public BedwarsInstance createInstanceObject(@NotNull String subtype, @Nullable Map<String, Objects> data) {
-        IChunkLoader schematicChunkLoader = null; // todo
-        BedwarsInstance bedwarsInstance = new BedwarsInstance(subtype, schematicChunkLoader);
-
-        bedwarsInstance.setAllowTeamSelector(data != null && data.get("teamSelector").toString().equals("true"));
+    public BedwarsInstance createInstanceObject(@NotNull String subtype, @Nullable Map<String, Object> data) {
+        BedwarsInstance bedwarsInstance;
+        try {
+            bedwarsInstance = new BedwarsInstance(subtype, data.get("map").toString(), data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return bedwarsInstance;
     }
 

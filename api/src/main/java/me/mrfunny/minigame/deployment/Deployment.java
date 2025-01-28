@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -26,7 +25,7 @@ public abstract class Deployment {
      * @param subtype precise subtype of the minigame. Usually getServerType() + subtype together
      * @return instance id. Usually Deployment#getServerId() + internal id provided by this server
      */
-    public abstract UUID createInstance(@NotNull String subtype, @Nullable Map<String, Objects> data);
+    public abstract UUID createInstance(@NotNull String subtype, @Nullable Map<String, Object> data);
 
     /**
      * Asks server to destroy an instance.

@@ -13,17 +13,16 @@ public class BedwarsLobby extends BedwarsStage {
 
     @Override
     public void start() {
-        EventNode<InstanceEvent> handler = instance.eventNode();
-        handle(PlayerBlockPlaceEvent.class, event -> {
+        stageEventHandler.addListener(PlayerBlockPlaceEvent.class, event -> {
             event.setCancelled(true);
         });
-        handle(PlayerBlockInteractEvent.class, event -> {
+        stageEventHandler.addListener(PlayerBlockInteractEvent.class, event -> {
             event.setCancelled(true);
         });
-        handle(PlayerBlockBreakEvent.class, event -> {
+        stageEventHandler.addListener(PlayerBlockBreakEvent.class, event -> {
             event.setCancelled(true);
         });
-        handle(PlayerSpawnEvent.class, event -> {
+        stageEventHandler.addListener(PlayerSpawnEvent.class, event -> {
             event.getPlayer().setGameMode(GameMode.ADVENTURE);
         });
     }

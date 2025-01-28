@@ -1,5 +1,6 @@
 package me.mrfunny.minigame.bedwars.setup;
 
+import me.mrfunny.minigame.bedwars.team.BedwarsTeamData;
 import me.mrfunny.minigame.common.TeamColor;
 import net.minestom.server.entity.Player;
 
@@ -12,5 +13,5 @@ public class BedwarsSetupPlayerData {
     }
 
     public PositionTypes selectedPositionToClick;
-    public TeamColor selectedTeam;
+    public BedwarsTeamData selectedTeam;
 }

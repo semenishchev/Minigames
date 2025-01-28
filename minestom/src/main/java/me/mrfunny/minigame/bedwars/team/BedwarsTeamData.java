@@ -13,27 +13,15 @@ public class BedwarsTeamData {
     public Pos spawnPos;
     public Pos itemShopPos;
     public Pos teamUpgradesPos;
-    public Pos bedHalf1;
-    public Pos bedHalf2;
+    public Pos bedPos;
     public List<BedwarsGeneratorData> generators;
     public Pos teamChestPos;
-    public Pos personalChestPos;
     public Pos protectedCornerMin;
     public Pos protectedCornerMax;
 
     public BedwarsTeamData() {}
 
-    public BedwarsTeamData(TeamColor color, List<BedwarsGeneratorData> generators, Pos spawnPos, Pos itemShopPos, Pos teamUpgradesPos, Pos bedHalf1, Pos bedHalf2, Pos teamChestPos, Pos personalChestPos, Pos protectedCornerMin, Pos protectedCornerMax) {
+    public BedwarsTeamData(TeamColor color) {
         this.color = color;
-        this.spawnPos = spawnPos;
-        this.itemShopPos = itemShopPos;
-        this.teamUpgradesPos = teamUpgradesPos;
-        this.bedHalf1 = bedHalf1;
-        this.bedHalf2 = bedHalf2;
-        this.generators = generators;
-        this.teamChestPos = teamChestPos;
-        this.personalChestPos = personalChestPos;
-        this.protectedCornerMin = protectedCornerMin;
-        this.protectedCornerMax = protectedCornerMax;
     }
 }

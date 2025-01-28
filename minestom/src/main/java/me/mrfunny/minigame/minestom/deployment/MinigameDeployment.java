@@ -18,10 +18,10 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
         super(deploymentInfo);
     }
 
-    public abstract T createInstanceObject(@NotNull String subtype, @Nullable Map<String, Objects> data);
+    public abstract T createInstanceObject(@NotNull String subtype, @Nullable Map<String, Object> data);
 
     @Override
-    public UUID createInstance(@NotNull String subtype, @Nullable Map<String, Objects> data) {
+    public UUID createInstance(@NotNull String subtype, @Nullable Map<String, Object> data) {
         BalancedInstance instance = createInstanceObject(subtype, data);
         MinecraftServer.getInstanceManager().registerInstance(instance);
         return instance.getUniqueId();
@@ -98,7 +98,7 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
     }
 
     public static File getMapWorld(String minigame, String mapName) {
-        return new File(getMapDataFolder(minigame, mapName), "chunks");
+        return new File(getMapDataFolder(minigame, mapName), "chunks.zip");
     }
 
     public static File getMapConfig(String minigame, String mapName) {

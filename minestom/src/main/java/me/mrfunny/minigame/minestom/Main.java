@@ -15,8 +15,8 @@ import me.mrfunny.minigame.deployment.info.DebugDeploymentInfo;
 import me.mrfunny.minigame.deployment.info.DeploymentInfo;
 import me.mrfunny.minigame.deployment.info.PterodactylDeploymentInfo;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
-import me.mrfunny.minigame.minestom.serial.PosDeserializer;
-import me.mrfunny.minigame.minestom.serial.PosSerializer;
+import me.mrfunny.minigame.common.serial.PosDeserializer;
+import me.mrfunny.minigame.common.serial.PosSerializer;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.GameMode;
@@ -27,7 +27,6 @@ import net.minestom.server.instance.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.UUID;
 
 public class Main {
