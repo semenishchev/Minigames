@@ -25,7 +25,7 @@ public abstract class Deployment {
      * @param subtype precise subtype of the minigame. Usually getServerType() + subtype together
      * @return instance id. Usually Deployment#getServerId() + internal id provided by this server
      */
-    public abstract UUID createInstance(@NotNull String subtype, @Nullable Map<String, Object> data);
+    public abstract UUID createInstance(@NotNull String subtype, @Nullable Map<String, String> data);
 
     /**
      * Asks server to destroy an instance.
@@ -66,20 +66,28 @@ public abstract class Deployment {
         return this.deploymentInfo.getMinigameType();
     }
 
+    public DeploymentInfo getDeploymentInfo() {
+        return deploymentInfo;
+    }
+
     public void setBalancer(LoadBalancerClient balancer) {
         this.balancer = balancer;
     }
 
     public final void load() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            this.balancer.markServerStopped(this.deploymentInfo.getServerId(), encounteredError == null ? null : encounteredError.getMessage());
+            this.balancer.markServerStopped(encounteredError == null ? null : encounteredError.getMessage());
         }));
         try {
             this.onLoad();
-            this.balancer.markServerStarted(this.deploymentInfo.getServerId());
+            this.balancer.markServerStarted();
         } catch (Throwable t) {
             encounteredError = t;
             throw t;
         }
+    }
+
+    public void setEncounteredError(Throwable encounteredError) {
+        this.encounteredError = encounteredError;
     }
 }

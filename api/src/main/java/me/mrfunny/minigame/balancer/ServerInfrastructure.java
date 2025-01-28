@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  * Represents a global server infrastructure which can do global operations on player
  */
 public interface ServerInfrastructure {
-    void sendPlayer(UUID player, String serverId, String instanceId);
+    void sendPlayer(UUID player, String serverId, UUID instanceId);
     void kickPlayer(UUID player, Component reason);
     List<String> getPlayerPermissionNodes(UUID player);
     boolean isBanned(UUID player);

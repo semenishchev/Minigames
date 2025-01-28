@@ -20,6 +20,7 @@ import java.util.*;
 public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
 
     private final CombatFeatureSet combatFeatures;
+    private final EnumMap<BedwarsGameTypes, List<String>> availableMaps = new EnumMap<>(BedwarsGameTypes.class);
 
     public BedwarsDeployment(DeploymentInfo deploymentInfo) {
         super(deploymentInfo);
@@ -50,15 +51,29 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
     }
 
     @Override
-    public BedwarsInstance createInstanceObject(@NotNull String subtype, @Nullable Map<String, Object> data) {
+    public BedwarsInstance createInstanceObject(@NotNull String subtype, @Nullable Map<String, String> data) {
         BedwarsInstance bedwarsInstance;
         try {
-            bedwarsInstance = new BedwarsInstance(subtype, data.get("map").toString(), data);
+            BedwarsGameTypes gameType = BedwarsGameTypes.valueOf(subtype.toUpperCase());
+            String map = data.get("map");
+            if(map == null) {
+                map = availableMaps.get(gameType).getFirst();
+            }
+            if(map == null) {
+                this.balancer.reportError("No map could be picked");
+                return null;
+            }
+            bedwarsInstance = new BedwarsInstance(gameType, map, data);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         bedwarsInstance.eventNode().addChild(combatFeatures.createNode());
         return bedwarsInstance;
+    }
+
+    @Override
+    public @Nullable String pickRandomSubtype() {
+        return BedwarsGameTypes.DUO.name();
     }
 
     @Override
@@ -70,6 +85,11 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
 
     @Override
     public UUID getAvailableInstanceOfType(@NotNull String subtype) {
-        return super.getAvailableInstanceOfType(subtype);
+        return null;
+    }
+
+    @Override
+    public UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam) {
+        return null;
     }
 }

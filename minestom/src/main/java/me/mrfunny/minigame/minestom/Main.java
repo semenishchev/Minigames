@@ -8,6 +8,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import me.mrfunny.minigame.balancer.LoadBalancerClient;
 import me.mrfunny.minigame.balancer.impl.DebugBalancerClient;
+import me.mrfunny.minigame.balancer.impl.OlekRedisBalancerClient;
 import me.mrfunny.minigame.bedwars.BedwarsDeployment;
 import me.mrfunny.minigame.bedwars.setup.BedwarsSetup;
 import me.mrfunny.minigame.bedwars.instance.BedwarsStorage;
@@ -27,9 +28,12 @@ import net.minestom.server.instance.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ForkJoinPool;
 
-public class Main {
+public class    Main {
     public static DeploymentInfo deploymentInfo;
     public static Logger LOGGER;
     public static ObjectMapper YAML;
@@ -76,24 +80,40 @@ public class Main {
         }
         LOGGER = getLogger("main");
         MinigameDeployment<?> minigame = pickMinigame(deploymentInfo);
-        LoadBalancerClient client = new DebugBalancerClient(minigame);
-        minigame.setBalancer(client);
-        minigame.load();
-        GlobalEventHandler globalEventHandler = MinecraftServer.getGlobalEventHandler();
-        globalEventHandler.addListener(AsyncPlayerConfigurationEvent.class, event -> {
-            final Player player = event.getPlayer();
-            UUID instanceOf = minigame.getInstanceOf(player.getUuid());
-            Instance instance;
-            if(instanceOf == null || (instance = MinecraftServer.getInstanceManager().getInstance(instanceOf)) == null) {
-                player.kick("Instance not found or deregistered");
-                client.reportError("Instance not found or deregistered");
-                LOGGER.warn("Instance requested by LB not found or deregistered: {}", instanceOf);
-                return;
+        try {
+            LoadBalancerClient client;
+            if(debug) {
+                client = new DebugBalancerClient(minigame);
+                Map<String, String> data = new HashMap<>();
+                for (int i = 1; i < args.length; i++) {
+                    String[] split = args[i].split("=");
+                    data.put(split[0], split[1]);
+                }
+                minigame.createInstance(data.get("type"), data);
+            } else {
+                client = new OlekRedisBalancerClient(minigame);
             }
-            player.setGameMode(GameMode.ADVENTURE);
-            event.setSpawningInstance(instance);
-        });
-        minecraftServer.start(deploymentInfo.getServerHost(), deploymentInfo.getServerPort());
+            minigame.setBalancer(client);
+            minigame.load();
+            GlobalEventHandler globalEventHandler = MinecraftServer.getGlobalEventHandler();
+            globalEventHandler.addListener(AsyncPlayerConfigurationEvent.class, event -> {
+                final Player player = event.getPlayer();
+                UUID instanceOf = minigame.getInstanceOf(player.getUuid());
+                Instance instance;
+                if(instanceOf == null || (instance = MinecraftServer.getInstanceManager().getInstance(instanceOf)) == null) {
+                    player.kick("Instance not found or deregistered");
+                    client.reportError("Instance not found or deregistered");
+                    LOGGER.warn("Instance requested by LB not found or deregistered: {}", instanceOf);
+                    return;
+                }
+                player.setGameMode(GameMode.ADVENTURE);
+                event.setSpawningInstance(instance);
+            });
+            minecraftServer.start(deploymentInfo.getServerHost(), deploymentInfo.getServerPort());
+        } catch (Throwable t) {
+            minigame.setEncounteredError(t);
+            throw t;
+        }
     }
 
     private static MinigameDeployment<?> pickMinigame(DeploymentInfo info) {

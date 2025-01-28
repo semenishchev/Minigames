@@ -23,37 +23,37 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     }
 
     @Override
-    public void reportNewInstanceId(String subtype, String instanceId) {
+    public void reportNewInstanceId(String subtype, UUID instanceId) {
 
     }
 
     @Override
-    public void markInstanceDone(String instanceId) {
+    public void markInstanceDone(UUID instanceId) {
 
     }
 
     @Override
-    public void markInstanceDestroyed(String instanceId, String reason) {
+    public void markInstanceDestroyed(UUID instanceId, String reason) {
 
     }
 
     @Override
-    public void markPlayerConnected(String instanceId, UUID player) {
+    public void markPlayerConnected(UUID instanceId, UUID player) {
 
     }
 
     @Override
-    public void serverKeepalive(String serverId) {
+    public void serverKeepalive() {
 
     }
 
     @Override
-    public void markServerStarted(String serverId) {
+    public void markServerStarted() {
 
     }
 
     @Override
-    public void markServerStopped(String serverId, String error) {
+    public void markServerStopped(String error) {
 
     }
 
@@ -63,7 +63,7 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     }
 
     @Override
-    public void sendPlayer(UUID player, String serverId, String instanceId) {
+    public void sendPlayer(UUID player, String serverId, UUID instanceId) {
 
     }
 

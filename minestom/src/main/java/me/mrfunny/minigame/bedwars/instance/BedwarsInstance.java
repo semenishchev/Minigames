@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 public class BedwarsInstance extends BalancedInstance {
     private final BedwarsGameTypes gameType;
@@ -18,16 +19,16 @@ public class BedwarsInstance extends BalancedInstance {
     private final boolean allowTeamSelector;
     private BedwarsStage gameStage;
 
-    public BedwarsInstance(@NotNull String subtype, String map, Map<String, Object> data) throws IOException {
-        super(subtype, null);
-        this.gameType = BedwarsGameTypes.valueOf(subtype.toUpperCase());
+    public BedwarsInstance(@NotNull BedwarsGameTypes gameType, String map, Map<String, String> data) throws IOException {
+        super(gameType.name(), null);
+        this.gameType = gameType;
         this.mapConfig = BedwarsMapConfig.read(map);
         setChunkLoader(new ChunkPerFileChunkLoader(getUniqueId(),
             MinigameDeployment.getMapWorld(BedwarsStorage.COLLECTION_NAME, map),
             false,
             DynamicRegistry.Key.of(mapConfig.mapBiome)
         ));
-        this.allowTeamSelector = (Boolean) data.getOrDefault("teamSelector", false);
+        this.allowTeamSelector = Objects.equals("true", data.get("teamSelector"));
     }
 
     public boolean isAllowTeamSelector() {

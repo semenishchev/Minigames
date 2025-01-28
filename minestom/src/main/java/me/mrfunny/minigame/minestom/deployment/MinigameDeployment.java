@@ -18,17 +18,29 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
         super(deploymentInfo);
     }
 
-    public abstract T createInstanceObject(@NotNull String subtype, @Nullable Map<String, Object> data);
+    public abstract T createInstanceObject(@NotNull String subtype, @Nullable Map<String, String> data);
 
     @Override
-    public UUID createInstance(@NotNull String subtype, @Nullable Map<String, Object> data) {
+    public UUID createInstance(@Nullable String subtype, @Nullable Map<String, String> data) {
+        if (subtype == null) {
+            subtype = pickRandomSubtype();
+        }
+        if(subtype == null) {
+            this.balancer.reportError("Failed to create a minigame instance of " + subtype + " on " + this.deploymentInfo.getServerId());
+            return null;
+        }
         BalancedInstance instance = createInstanceObject(subtype, data);
+        if(instance == null) return null;
         MinecraftServer.getInstanceManager().registerInstance(instance);
+        this.balancer.reportNewInstanceId(subtype, instance.getUniqueId());
         return instance.getUniqueId();
     }
 
+    public abstract @Nullable String pickRandomSubtype();
+
     @Override
     public void destroyInstance(@NotNull UUID instanceId) {
+        this.balancer.markInstanceDestroyed(instanceId, null);
         Instance instance = MinecraftServer.getInstanceManager().getInstance(instanceId);
         if(instance == null) {
             this.balancer.reportError("Requested instance to destroy " + instanceId + " is not an active instance on this server");
@@ -60,9 +72,7 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
      * @return
      */
     @Override
-    public UUID getAvailableInstanceOfType(@NotNull String subtype) {
-        return null;
-    }
+    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype);
 
     /**
      * Used when players are in a group (party). Used to look up an instance where there's a completely free team
@@ -71,18 +81,19 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
      * @return
      */
     @Override
-    public UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam) {
-        return null;
-    }
+    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam);
 
     @Override
     public int getTotalPlayers() {
-        return 0;
+        return MinecraftServer.getConnectionManager().getOnlinePlayerCount();
     }
 
     @Override
     public void stopServer() {
         if(MinecraftServer.isStopping()) return;
+        for (@NotNull Instance instance : MinecraftServer.getInstanceManager().getInstances()) {
+            balancer.markInstanceDestroyed(instance.getUniqueId(), "Server stop");
+        }
         MinecraftServer.stopCleanly();
     }
 

@@ -15,7 +15,9 @@ val include: Configuration by configurations.creating {
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    include("net.minestom:minestom-snapshots:0d47d97417")
+    include("net.minestom:minestom-snapshots:0d47d97417") {
+        exclude("org.slf4j")
+    }
     include("ch.qos.logback:logback-classic:1.5.16")
     include("org.fusesource.jansi:jansi:2.4.1")
     include("dev.hollowcube:schem:1.3.1")
