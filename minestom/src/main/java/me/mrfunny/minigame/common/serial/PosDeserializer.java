@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 
@@ -18,6 +19,9 @@ public class PosDeserializer extends StdDeserializer<Point> {
     @Override
     public Point deserialize(JsonParser parser, DeserializationContext ctx) throws IOException, JacksonException {
         JsonNode node = parser.getCodec().readTree(parser);
+        if(!node.has("yaw")) {
+            return new BlockVec(node.get("x").doubleValue(), node.get("y").doubleValue(), node.get("z").doubleValue());
+        }
         return new Pos(node.get("x").doubleValue(), node.get("y").doubleValue(), node.get("z").doubleValue(), (float) node.get("yaw").asDouble(0.0), (float) node.get("pitch").asDouble(0.0));
     }
 }

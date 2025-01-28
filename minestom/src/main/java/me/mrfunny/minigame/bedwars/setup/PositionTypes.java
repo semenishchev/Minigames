@@ -13,7 +13,7 @@ public enum PositionTypes {
     TEAM_CORNER_MIN(true),
     TEAM_CORNER_MAX(true),
     ITEM_SHOP(true),
-    UPGRADES_SHOP(true),
+    TEAM_UPGRADES(true),
     BED(true),
     TEAM_CHEST(true);
 

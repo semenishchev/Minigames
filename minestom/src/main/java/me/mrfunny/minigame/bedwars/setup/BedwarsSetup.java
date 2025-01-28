@@ -20,6 +20,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandSender;
 import net.minestom.server.command.builder.Command;
+import net.minestom.server.command.builder.CommandExecutor;
 import net.minestom.server.command.builder.arguments.ArgumentEnum;
 import net.minestom.server.command.builder.arguments.ArgumentType;
 import net.minestom.server.command.builder.suggestion.SuggestionEntry;
@@ -50,10 +51,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.BufferUnderflowException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class BedwarsSetup extends InstanceContainer {
@@ -331,6 +329,9 @@ public class BedwarsSetup extends InstanceContainer {
                     sender.sendMessage("Game type not selected");
                     return;
                 }
+                if(config.teams == null) {
+                    config.teams = new HashMap<>();
+                }
                 if(config.teams.size() >= config.gameType.getTeamsCount()) {
                     sender.sendMessage("This game type doesn't support more teams");
                     return;
@@ -354,9 +355,15 @@ public class BedwarsSetup extends InstanceContainer {
                 List<BedwarsGeneratorData> generatorData;
                 if(selectedTeam != null) {
                     generatorData = selectedTeam.generators;
+                    if(generatorData == null) {
+                        generatorData = selectedTeam.generators = new LinkedList<>();
+                    }
                     player.sendMessage(Component.text("Receiver: " + selectedTeam.color.name(), selectedTeam.color.chatColor));
                 } else {
                     generatorData = config.globalGenerators;
+                    if(generatorData == null) {
+                        generatorData = config.globalGenerators = new LinkedList<>();
+                    }
                 }
                 BlockVec pos = new BlockVec(player.getPosition());
                 BedwarsGeneratorData gen = new BedwarsGeneratorData(type, pos);
@@ -436,16 +443,16 @@ public class BedwarsSetup extends InstanceContainer {
             super("pos");
             var posArgument = ArgumentType.Enum("position-type", PositionTypes.class);
             var centrate = ArgumentType.Literal("centrate");
-            addSyntax((sender, context) -> {
-                if(!(sender instanceof Player player)) return;
+            CommandExecutor executor = (sender, context) -> {
+                if (!(sender instanceof Player player)) return;
                 BedwarsSetupPlayerData data = getPlayerData(player);
                 PositionTypes type = context.get(posArgument);
                 Pos pos = player.getPosition();
-                if(context.has(centrate)) {
+                if (context.has(centrate)) {
                     pos = new Pos(pos.blockX() + 0.5, pos.blockY(), pos.blockZ() + 0.5, pos.yaw(), pos.pitch());
                 }
-                if(type.isTeamPosition()) {
-                    if(data.selectedTeam == null) {
+                if (type.isTeamPosition()) {
+                    if (data.selectedTeam == null) {
                         player.sendMessage("This is a team position and you don't have a team selected");
                         return;
                     }
@@ -454,12 +461,15 @@ public class BedwarsSetup extends InstanceContainer {
                         data.selectedTeam,
                         pos
                     );
+                    sender.sendMessage("Updated position " + type + " to " + pos);
                     return;
                 }
 
                 handleGlobalPosition(type, pos);
                 sender.sendMessage("Updated position " + type + " to " + pos);
-            }, posArgument, centrate);
+            };
+            addSyntax(executor, posArgument, centrate);
+            addSyntax(executor, posArgument);
         }
     }
 
@@ -479,9 +489,9 @@ public class BedwarsSetup extends InstanceContainer {
             case TEAM_CORNER_MIN -> data.protectedCornerMin = pos;
             case TEAM_CORNER_MAX -> data.protectedCornerMax = pos;
             case ITEM_SHOP -> data.itemShopPos = pos;
-            case UPGRADES_SHOP -> data.teamUpgradesPos = pos;
+            case TEAM_UPGRADES -> data.teamUpgradesPos = pos;
             case BED -> {
-                Block block = instance.getBlock(pos);
+                Block block = instance.getBlock(new BlockVec(pos));
                 if(!isBed(block)) {
                     instance.sendMessage(Component.text("Not a bed"));
                     return;
@@ -590,6 +600,7 @@ public class BedwarsSetup extends InstanceContainer {
         private void saveConfig(CommandSender sender) {
             try {
                 Main.YAML.writeValue(configFile, config);
+                sender.sendMessage("Saved config");
             } catch(Exception e) {
                 Main.LOGGER.error("Failed to save map config {}", mapName, e);
                 sender.sendMessage("Failed to save. Check console");

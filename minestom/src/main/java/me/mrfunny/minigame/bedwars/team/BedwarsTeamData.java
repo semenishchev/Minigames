@@ -3,6 +3,7 @@ package me.mrfunny.minigame.bedwars.team;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import me.mrfunny.minigame.bedwars.data.BedwarsGeneratorData;
 import me.mrfunny.minigame.common.TeamColor;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 
 import java.util.List;
@@ -13,9 +14,9 @@ public class BedwarsTeamData {
     public Pos spawnPos;
     public Pos itemShopPos;
     public Pos teamUpgradesPos;
-    public Pos bedPos;
+    public Point bedPos;
     public List<BedwarsGeneratorData> generators;
-    public Pos teamChestPos;
+    public Point teamChestPos;
     public Pos protectedCornerMin;
     public Pos protectedCornerMax;
 
