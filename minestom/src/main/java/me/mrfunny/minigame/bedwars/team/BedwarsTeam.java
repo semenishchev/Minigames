@@ -31,7 +31,7 @@ public class BedwarsTeam {
         if(playerData.getTeam() != null) {
             throw new IllegalArgumentException("This team is already a team");
         }
-        if(playerData.getTeam() != this) {
+        if(playerData.getBedwarsTeam() != this) {
             throw new IllegalStateException("Before adding the player on the team, it should have its field set to this team");
         }
         this.minecraftTeam.addMember(playerData.getUsername());

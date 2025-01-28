@@ -1,25 +1,43 @@
 package me.mrfunny.minigame.bedwars.data;
 
+import io.github.togar2.pvp.player.CombatPlayer;
+import io.github.togar2.pvp.player.CombatPlayerImpl;
 import me.mrfunny.minigame.bedwars.team.BedwarsTeam;
+import net.minestom.server.ServerFlag;
+import net.minestom.server.collision.Aerodynamics;
+import net.minestom.server.collision.PhysicsResult;
+import net.minestom.server.collision.PhysicsUtils;
+import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.entity.EntityVelocityEvent;
+import net.minestom.server.instance.Chunk;
+import net.minestom.server.network.player.GameProfile;
+import net.minestom.server.network.player.PlayerConnection;
+import net.minestom.server.potion.PotionEffect;
+import net.minestom.server.potion.TimedPotion;
+import net.minestom.server.utils.chunk.ChunkUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.WeakReference;
+import java.util.UUID;
+import java.util.function.Function;
 
-public class BedwarsPlayerData {
-    private final WeakReference<Player> player;
-    private final String username;
+public class BedwarsPlayerData extends Player implements CombatPlayer {
     private BedwarsTeam memberOf;
+    private boolean velocityUpdate = false;
+    private PhysicsResult previousPhysicsResult = null;
 
-    public BedwarsPlayerData(Player player) {
-        this.player = new WeakReference<>(player);
-        this.username = player.getUsername();
+    public BedwarsPlayerData(@NotNull PlayerConnection playerConnection, @NotNull GameProfile gameProfile) {
+        super(playerConnection, gameProfile);
     }
 
-    public BedwarsTeam getTeam() {
+    public BedwarsTeam getBedwarsTeam() {
         return memberOf;
     }
 
-    public void setTeam(BedwarsTeam team) {
+    public void setBedwarsTeam(BedwarsTeam team) {
         BedwarsTeam memberOf = this.memberOf;
         if(memberOf != null) {
             this.memberOf = null;
@@ -28,16 +46,53 @@ public class BedwarsPlayerData {
         (this.memberOf = team).addMember(this);
     }
 
-    public Player getPlayer() {
-        return player.get();
+    public void setVelocity(@NotNull Vec velocity) {
+        EntityVelocityEvent entityVelocityEvent = new EntityVelocityEvent(this, velocity);
+        EventDispatcher.callCancellable(entityVelocityEvent, () -> {
+            this.velocity = entityVelocityEvent.getVelocity();
+            this.velocityUpdate = true;
+        });
     }
 
-    public boolean isOnline() {
-        Player player = getPlayer();
-        return player != null && player.isOnline();
+    public void setVelocityNoUpdate(Function<Vec, Vec> function) {
+        this.velocity = (Vec)function.apply(this.velocity);
     }
 
-    public String getUsername() {
-        return username;
+    public void sendImmediateVelocityUpdate() {
+        if (this.velocityUpdate) {
+            this.velocityUpdate = false;
+            this.sendPacketToViewersAndSelf(this.getVelocityPacket());
+        }
+
+    }
+
+    protected void movementTick() {
+        this.gravityTickCount = this.onGround ? 0 : this.gravityTickCount + 1;
+        if (this.vehicle == null) {
+            double tps = (double) ServerFlag.SERVER_TICKS_PER_SECOND;
+            Aerodynamics aerodynamics = this.getAerodynamics();
+            if (this.velocity.y() < 0.0 && this.hasEffect(PotionEffect.SLOW_FALLING)) {
+                aerodynamics = aerodynamics.withGravity(0.01);
+            }
+
+            PhysicsResult physicsResult = PhysicsUtils.simulateMovement(this.position, this.velocity.div((double)ServerFlag.SERVER_TICKS_PER_SECOND), this.boundingBox, this.instance.getWorldBorder(), this.instance, aerodynamics, this.hasNoGravity(), this.hasPhysics, this.onGround, this.isFlying(), this.previousPhysicsResult);
+            this.previousPhysicsResult = physicsResult;
+            Chunk finalChunk = ChunkUtils.retrieve(this.instance, this.currentChunk, physicsResult.newPosition());
+            if (ChunkUtils.isLoaded(finalChunk)) {
+                this.velocity = physicsResult.newVelocity().mul(tps);
+                this.onGround = physicsResult.isOnGround();
+                TimedPotion levitation = this.getEffect(PotionEffect.LEVITATION);
+                if (levitation != null) {
+                    this.velocity = this.velocity.withY((0.05 * (double)(levitation.potion().amplifier() + 1) - this.velocity.y() / tps) * 0.2 * tps);
+                }
+
+                this.sendImmediateVelocityUpdate();
+            }
+        }
+    }
+
+    @Override
+    public void kill() {
+        // todo: start respawn task
     }
 }
