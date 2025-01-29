@@ -24,4 +24,8 @@ public enum BedwarsGameTypes {
     public int getTeamsCount() {
         return teamsCount;
     }
+
+    public int getTotalPlayers() {
+        return playersInTeam * teamsCount;
+    }
 }

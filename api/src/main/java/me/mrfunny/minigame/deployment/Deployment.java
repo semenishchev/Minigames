@@ -48,10 +48,11 @@ public abstract class Deployment {
     public abstract @Nullable UUID getInstanceOf(UUID player);
 
     /**
-     * @return Gets an instance which can accept a new player to join the game. Null if all games on the server are running
+     * Used when players are in a group (party). Used to look up an instance where there's a completely free team
+     * @param subtype
+     * @param playersInTeam
+     * @return
      */
-    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype);
-
     public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam);
 
     /**

@@ -21,6 +21,7 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
 
     private final CombatFeatureSet combatFeatures;
     private final EnumMap<BedwarsGameTypes, List<String>> availableMaps = new EnumMap<>(BedwarsGameTypes.class);
+    private final EnumMap<BedwarsGameTypes, List<BedwarsInstance>> availableInstances = new EnumMap<>(BedwarsGameTypes.class);
 
     public BedwarsDeployment(DeploymentInfo deploymentInfo) {
         super(deploymentInfo);
@@ -81,11 +82,6 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
         return Arrays.stream(BedwarsGameTypes.values())
             .map(BedwarsGameTypes::getBalancerName)
             .toList();
-    }
-
-    @Override
-    public UUID getAvailableInstanceOfType(@NotNull String subtype) {
-        return null;
     }
 
     @Override
