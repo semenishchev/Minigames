@@ -22,8 +22,10 @@ dependencies {
     include("org.fusesource.jansi:jansi:2.4.1")
     include("dev.hollowcube:schem:1.3.1")
     include("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.2")
-    include("com.github.TogAr2:MinestomPvP:04180ddf9a")
-    include(project(":api"))
+    include("com.github.semenishchev:MinestomPvP:fe6682f8bb")
+    include(project(":api")) {
+        exclude("net.kyori", "adventure-api")
+    }
     include(project(":assets"))
 }
 

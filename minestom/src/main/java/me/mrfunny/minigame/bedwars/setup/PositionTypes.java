@@ -7,6 +7,7 @@ public enum PositionTypes {
     LOBBY_MIN,
     LOBBY_MAX,
     LOBBY_SPAWN,
+    VOID_DEATH,
 
     // team positions
     TEAM_SPAWN(true),

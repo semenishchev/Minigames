@@ -38,6 +38,7 @@ public class    Main {
     public static Logger LOGGER;
     public static ObjectMapper YAML;
     public static void main(String[] args) {
+        LOGGER = LoggerFactory.getLogger("bootstrap");
         YAML = new ObjectMapper(new YAMLFactory()
             .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
         ).findAndRegisterModules()
@@ -52,10 +53,6 @@ public class    Main {
         boolean debug = false;
         // very hardcoded, but end user isn't using this, so very foolproof anyways
         checker: if(args.length > 0) {
-            if(args[0].equals("debug")) {
-                debug = true;
-                break checker;
-            }
             if(args[0].startsWith("setup")) {
                 String minigame = args[0].split("=")[1];
                 deploymentInfo = new DebugDeploymentInfo(minigame);
@@ -70,14 +67,17 @@ public class    Main {
                 }
                 minecraftServer.start("0.0.0.0", 25565);
                 return;
+            } else {
+                debug = true;
             }
         }
         DeploymentInfo deploymentInfo = debug ? new DebugDeploymentInfo(args[0]) : new PterodactylDeploymentInfo();
         if(deploymentInfo.getMinigameType() == null) {
-            System.err.println("Don't know which minigame to start! Use server");
+            LOGGER.error("Don't know which minigame to start! Use server");
             MinecraftServer.stopCleanly();
             return;
         }
+        Main.deploymentInfo = deploymentInfo;
         LOGGER = getLogger("main");
         MinigameDeployment<?> minigame = pickMinigame(deploymentInfo);
         try {
@@ -112,7 +112,9 @@ public class    Main {
             minecraftServer.start(deploymentInfo.getServerHost(), deploymentInfo.getServerPort());
         } catch (Throwable t) {
             minigame.setEncounteredError(t);
-            throw t;
+            LOGGER.error("Failed to load", t);
+            MinecraftServer.stopCleanly();
+            System.exit(1);
         }
     }
 

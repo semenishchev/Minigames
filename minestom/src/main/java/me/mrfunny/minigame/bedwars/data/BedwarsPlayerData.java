@@ -1,18 +1,18 @@
 package me.mrfunny.minigame.bedwars.data;
 
 import io.github.togar2.pvp.player.CombatPlayer;
-import io.github.togar2.pvp.player.CombatPlayerImpl;
+import me.mrfunny.minigame.bedwars.instance.BedwarsInstance;
 import me.mrfunny.minigame.bedwars.team.BedwarsTeam;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.collision.Aerodynamics;
 import net.minestom.server.collision.PhysicsResult;
 import net.minestom.server.collision.PhysicsUtils;
-import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.entity.EntityVelocityEvent;
 import net.minestom.server.instance.Chunk;
+import net.minestom.server.instance.Instance;
 import net.minestom.server.network.player.GameProfile;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.potion.PotionEffect;
@@ -20,10 +20,10 @@ import net.minestom.server.potion.TimedPotion;
 import net.minestom.server.utils.chunk.ChunkUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.ref.WeakReference;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+@SuppressWarnings("UnstableApiUsage")
 public class BedwarsPlayerData extends Player implements CombatPlayer {
     private BedwarsTeam memberOf;
     private boolean velocityUpdate = false;
@@ -55,7 +55,7 @@ public class BedwarsPlayerData extends Player implements CombatPlayer {
     }
 
     public void setVelocityNoUpdate(Function<Vec, Vec> function) {
-        this.velocity = (Vec)function.apply(this.velocity);
+        this.velocity = function.apply(this.velocity);
     }
 
     public void sendImmediateVelocityUpdate() {
@@ -63,10 +63,21 @@ public class BedwarsPlayerData extends Player implements CombatPlayer {
             this.velocityUpdate = false;
             this.sendPacketToViewersAndSelf(this.getVelocityPacket());
         }
+    }
 
+    @Override
+    public CompletableFuture<Void> setInstance(@NotNull Instance instance) {
+        if(!(instance instanceof BedwarsInstance bw)) {
+            throw new IllegalArgumentException("Instance for a Bedwars player is not a BedwarsInstance");
+        }
+        setRespawnPoint(bw.getMapConfig().lobbySpawn);
+        return super.setInstance(instance);
     }
 
     protected void movementTick() {
+        if(instance.isInVoid(this.position) || this.position.y() <= ((BedwarsInstance) instance).getMapConfig().voidDeathPosition) {
+            scheduler().scheduleNextProcess(this::kill);
+        }
         this.gravityTickCount = this.onGround ? 0 : this.gravityTickCount + 1;
         if (this.vehicle == null) {
             double tps = (double) ServerFlag.SERVER_TICKS_PER_SECOND;
@@ -94,5 +105,8 @@ public class BedwarsPlayerData extends Player implements CombatPlayer {
     @Override
     public void kill() {
         // todo: start respawn task
+        this.setHealth(20);
+        this.teleport(this.getRespawnPoint());
+        this.sendMessage("uhh suka");
     }
 }

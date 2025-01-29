@@ -7,6 +7,7 @@ import me.mrfunny.minigame.bedwars.instance.BedwarsStorage;
 import me.mrfunny.minigame.bedwars.team.BedwarsTeamData;
 import me.mrfunny.minigame.common.TeamColor;
 import me.mrfunny.minigame.minestom.Main;
+import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import net.minestom.server.coordinate.Pos;
 
 import java.io.File;
@@ -28,8 +29,9 @@ public class BedwarsMapConfig {
     public List<BedwarsEventData> customEvents;
     public String predefinedEvents;
     public String predefinedGeneratorPerformance;
+    public int voidDeathPosition = 0;
 
     public static BedwarsMapConfig read(String map) throws IOException {
-        return Main.YAML.readValue(new File(BedwarsStorage.COLLECTION_NAME, map), BedwarsMapConfig.class);
+        return Main.YAML.readValue(MinigameDeployment.getMapConfig(BedwarsStorage.COLLECTION_NAME, map), BedwarsMapConfig.class);
     }
 }

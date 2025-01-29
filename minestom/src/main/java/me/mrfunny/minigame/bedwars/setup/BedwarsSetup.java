@@ -480,6 +480,7 @@ public class BedwarsSetup extends InstanceContainer {
             case LOBBY_MIN -> config.lobbyMin = pos;
             case LOBBY_MAX -> config.lobbyMax = pos;
             case LOBBY_SPAWN -> config.lobbySpawn = pos;
+            case VOID_DEATH -> config.voidDeathPosition = pos.blockY();
         }
     }
 

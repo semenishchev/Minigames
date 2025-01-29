@@ -6,17 +6,21 @@ import me.mrfunny.minigame.bedwars.setup.BedwarsMapConfig;
 import me.mrfunny.minigame.common.ChunkPerFileChunkLoader;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import me.mrfunny.minigame.minestom.instance.BalancedInstance;
+import net.minestom.server.event.EventNode;
+import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.registry.DynamicRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class BedwarsInstance extends BalancedInstance {
     private final BedwarsGameTypes gameType;
     private final BedwarsMapConfig mapConfig;
-    private final boolean allowTeamSelector;
+    private final LinkedList<Supplier<EventNode<? extends InstanceEvent>>> activeStageNodes = new LinkedList<>();
     private BedwarsStage gameStage;
 
     public BedwarsInstance(@NotNull BedwarsGameTypes gameType, String map, Map<String, String> data) throws IOException {
@@ -28,11 +32,7 @@ public class BedwarsInstance extends BalancedInstance {
             false,
             DynamicRegistry.Key.of(mapConfig.mapBiome)
         ));
-        this.allowTeamSelector = Objects.equals("true", data.get("teamSelector"));
-    }
-
-    public boolean isAllowTeamSelector() {
-        return allowTeamSelector;
+        setGameStage(new BedwarsLobby(this, Objects.equals("true", data.get("teamSelector"))));
     }
 
     public BedwarsGameTypes getGameType() {
@@ -56,5 +56,13 @@ public class BedwarsInstance extends BalancedInstance {
         this.gameStage = gameStage;
         gameStage.register();
         gameStage.start();
+    }
+
+    public void addActiveStageNode(Supplier<EventNode<? extends InstanceEvent>> supplier) {
+        activeStageNodes.add(supplier);
+    }
+
+    public LinkedList<Supplier<EventNode<? extends InstanceEvent>>> getActiveStageNodes() {
+        return activeStageNodes;
     }
 }

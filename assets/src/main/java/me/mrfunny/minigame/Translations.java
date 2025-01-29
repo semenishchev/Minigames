@@ -1,6 +1,8 @@
 package me.mrfunny.minigame;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -8,6 +10,7 @@ import java.util.List;
 
 public class Translations {
     private static List<Component> allTranslations;
+    public static final Component BEDWARS_TEAM_SELECTOR = translation("bedwars.team-selector");
     public static final Component BEDWARS_IRON_GENERATOR = translation("bedwars.generator.iron", "Iron Generator");
     public static final Component BEDWARS_GOLD_GENERATOR = translation("bedwars.generator.gold", "Gold Generator");
     public static final Component BEDWARS_DIAMOND_GENERATOR = translation("bedwars.generator.diamond", "Diamond Generator");
@@ -48,11 +51,16 @@ public class Translations {
     public static final Component COMMON_COLOR_GRAY = translation("color.gray", "Gray");
     public static final Component COMMON_COLOR_WHITE = translation("color.white", "White");
     public static final Component COMMON_COLOR_BLACK = translation("color.black", "Black");
+    public static final Component COMMON_TO_LOBBY = translation("msg.back-lobby", "Go back to Lobby");
     private static Component translation(String key) {
         return translation(key, null);
     }
     private static Component translation(String key, String fallback) {
-        Component component = Component.translatable(key, fallback);
+        Component component = Component.translatable()
+            .key(key)
+            .fallback(fallback)
+            .decoration(TextDecoration.ITALIC, false)
+            .build();
         if(allTranslations == null) {
             allTranslations = new LinkedList<>();
         }

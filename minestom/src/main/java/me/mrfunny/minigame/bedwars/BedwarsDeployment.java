@@ -67,7 +67,7 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        bedwarsInstance.eventNode().addChild(combatFeatures.createNode());
+        bedwarsInstance.addActiveStageNode(combatFeatures::createNode);
         return bedwarsInstance;
     }
 
