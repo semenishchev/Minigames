@@ -83,6 +83,10 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
     @NotNull
     public abstract List<String> getSupportedSubtypes();
 
+    public Instance getAssignedInstance(Player player) {
+        return null;
+    }
+
     public static File getMapDataFolder(String minigame, String mapName) {
         File folder = new File(minigame + "/maps/" + mapName);
         if(!folder.exists()) {

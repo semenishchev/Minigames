@@ -105,8 +105,12 @@ public class    Main {
             } else {
                 globalEventHandler.addListener(AsyncPlayerConfigurationEvent.class, event -> {
                     final Player player = event.getPlayer();
+                    Instance instance = minigame.getAssignedInstance(player);
+                    if(instance != null) {
+                        event.setSpawningInstance(instance);
+                        return;
+                    }
                     UUID instanceOf = minigame.getInstanceOf(player.getUuid());
-                    Instance instance;
                     if(instanceOf == null || (instance = MinecraftServer.getInstanceManager().getInstance(instanceOf)) == null) {
                         player.kick("Instance not found or deregistered");
                         client.reportError("Instance not found or deregistered");
