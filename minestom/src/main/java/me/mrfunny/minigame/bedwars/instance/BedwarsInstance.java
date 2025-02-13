@@ -3,15 +3,19 @@ package me.mrfunny.minigame.bedwars.instance;
 import me.mrfunny.minigame.bedwars.instance.stage.BedwarsStage;
 import me.mrfunny.minigame.bedwars.instance.stage.BedwarsLobby;
 import me.mrfunny.minigame.bedwars.setup.BedwarsMapConfig;
+import me.mrfunny.minigame.bedwars.team.BedwarsTeam;
+import me.mrfunny.minigame.bedwars.team.BedwarsTeamData;
 import me.mrfunny.minigame.common.ChunkPerFileChunkLoader;
+import me.mrfunny.minigame.common.TeamColor;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import me.mrfunny.minigame.minestom.instance.BalancedInstance;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.trait.InstanceEvent;
-import net.minestom.server.registry.DynamicRegistry;
+import net.minestom.server.world.biome.Biome;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
@@ -21,18 +25,49 @@ public class BedwarsInstance extends BalancedInstance {
     private final BedwarsGameTypes gameType;
     private final BedwarsMapConfig mapConfig;
     private final LinkedList<Supplier<EventNode<? extends InstanceEvent>>> activeStageNodes = new LinkedList<>();
+    private final boolean privateGame;
+    private final Map<TeamColor, BedwarsTeam> teams = new HashMap<>();
+    private final boolean teamSelector;
     private BedwarsStage gameStage;
 
     public BedwarsInstance(@NotNull BedwarsGameTypes gameType, String map, Map<String, String> data) throws IOException {
         super(gameType.name(), null);
         this.gameType = gameType;
         this.mapConfig = BedwarsMapConfig.read(map);
-        setChunkLoader(new ChunkPerFileChunkLoader(getUniqueId(),
+        ChunkPerFileChunkLoader chunkLoader = new ChunkPerFileChunkLoader(getUniqueId(),
             MinigameDeployment.getMapWorld(BedwarsStorage.COLLECTION_NAME, map),
             false,
-            DynamicRegistry.Key.of(mapConfig.mapBiome)
-        ));
-        setGameStage(new BedwarsLobby(this, Objects.equals("true", data.get("teamSelector"))));
+            Biome.PLAINS
+        );
+        setChunkLoader(chunkLoader);
+        chunkLoader.loadAllChunks(this);
+        constructTeams();
+        this.privateGame = Boolean.parseBoolean(data.get("private"));
+        teamSelector = Boolean.parseBoolean(data.get("teamSelector"));
+        setGameStage(new BedwarsLobby(this, teamSelector));
+    }
+
+    private void constructTeams() {
+
+    }
+
+    public boolean isPrivateGame() {
+        return privateGame;
+    }
+
+    @Override
+    public boolean canAcceptMorePlayers(int amount) {
+        int maxTeamSize = this.gameType.getTotalPlayers();
+        if((maxTeamSize - this.getPlayers().size()) < amount) return false;
+        if(teamSelector) return true;
+        if(isPrivateGame()) return false;
+        if(this.gameType.getPlayersInTeam() < amount) return false;
+        for (BedwarsTeam team : teams.values()) {
+            if(maxTeamSize - team.getMembers().size() >= amount) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public BedwarsGameTypes getGameType() {

@@ -11,10 +11,7 @@ import me.mrfunny.minigame.minestom.Main;
 import net.kyori.adventure.nbt.*;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.CoordConversion;
-import net.minestom.server.instance.Chunk;
-import net.minestom.server.instance.IChunkLoader;
-import net.minestom.server.instance.Instance;
-import net.minestom.server.instance.Section;
+import net.minestom.server.instance.*;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.instance.palette.Palettes;
@@ -383,7 +380,7 @@ public class ChunkPerFileChunkLoader implements IChunkLoader {
         }
     }
 
-    public void loadAllChunks(BedwarsSetup instance) {
+    public void loadAllChunks(InstanceContainer instance) {
         for(long chunkPos : cachedChunkData.keySet()) {
             int x = CoordConversion.chunkIndexGetX(chunkPos);
             int z = CoordConversion.chunkIndexGetZ(chunkPos);

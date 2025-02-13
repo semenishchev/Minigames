@@ -66,23 +66,6 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
         return balancer.getInstanceOf(player);
     }
 
-    /**
-     * Get an instance for the player where there's at least 1 place free
-     * @param subtype
-     * @return
-     */
-    @Override
-    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype);
-
-    /**
-     * Used when players are in a group (party). Used to look up an instance where there's a completely free team
-     * @param subtype
-     * @param playersInTeam
-     * @return
-     */
-    @Override
-    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam);
-
     @Override
     public int getTotalPlayers() {
         return MinecraftServer.getConnectionManager().getOnlinePlayerCount();
@@ -99,6 +82,10 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
 
     @NotNull
     public abstract List<String> getSupportedSubtypes();
+
+    public Instance getAssignedInstance(Player player) {
+        return null;
+    }
 
     public static File getMapDataFolder(String minigame, String mapName) {
         File folder = new File(minigame + "/maps/" + mapName);

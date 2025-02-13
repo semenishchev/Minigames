@@ -27,6 +27,10 @@ public class BalancedInstance extends InstanceContainer {
         setChunkSupplier(LightingChunk::new);
     }
 
+    public boolean canAcceptMorePlayers(int amount) {
+        return false;
+    }
+
     public @Nullable String getSubtype() {
         return subtype;
     }
