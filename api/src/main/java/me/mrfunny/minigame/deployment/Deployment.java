@@ -50,7 +50,9 @@ public abstract class Deployment {
     /**
      * @return Gets an instance which can accept a new player to join the game. Null if all games on the server are running
      */
-    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype);
+    public UUID getAvailableInstanceOfType(@NotNull String subtype) {
+        return getAvailableInstanceOfType(subtype, 1);
+    }
 
     public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam);
 

@@ -4,8 +4,8 @@ import me.mrfunny.minigame.storage.StorageMap;
 import net.kyori.adventure.text.Component;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 public interface ServerInfrastructure {
     void sendPlayer(UUID player, String serverId, UUID instanceId);
     void kickPlayer(UUID player, Component reason);
-    List<String> getPlayerPermissionNodes(UUID player);
+    Set<String> getPlayerPermissionNodes(UUID player);
     boolean isBanned(UUID player);
     void banPlayer(UUID player, Duration duration, String reason);
     StorageMap getGlobalPlayerData(UUID player);

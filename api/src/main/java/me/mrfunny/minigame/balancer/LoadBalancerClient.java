@@ -1,6 +1,7 @@
 package me.mrfunny.minigame.balancer;
 
 import me.mrfunny.minigame.deployment.Deployment;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
@@ -39,4 +40,8 @@ public abstract class LoadBalancerClient implements ServerInfrastructure {
     public abstract void markServerStopped(String error);
 
     public abstract void reportError(String error);
+
+    public @Nullable UUID getInstanceOf(UUID player) {
+        return null;
+    }
 }

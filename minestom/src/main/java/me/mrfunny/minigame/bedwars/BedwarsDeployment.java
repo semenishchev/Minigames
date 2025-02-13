@@ -60,8 +60,7 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
                 map = availableMaps.get(gameType).getFirst();
             }
             if(map == null) {
-                this.balancer.reportError("No map could be picked");
-                return null;
+                throw new RuntimeException("No map could be picked");
             }
             bedwarsInstance = new BedwarsInstance(gameType, map, data);
         } catch (IOException e) {

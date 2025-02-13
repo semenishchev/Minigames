@@ -26,8 +26,7 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
             subtype = pickRandomSubtype();
         }
         if(subtype == null) {
-            this.balancer.reportError("Failed to create a minigame instance of " + subtype + " on " + this.deploymentInfo.getServerId());
-            return null;
+            throw new RuntimeException("Could not find subtype");
         }
         BalancedInstance instance = createInstanceObject(subtype, data);
         if(instance == null) return null;
@@ -43,8 +42,7 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
         this.balancer.markInstanceDestroyed(instanceId, null);
         Instance instance = MinecraftServer.getInstanceManager().getInstance(instanceId);
         if(instance == null) {
-            this.balancer.reportError("Requested instance to destroy " + instanceId + " is not an active instance on this server");
-            return;
+            throw new RuntimeException("Could not find instance: " + instanceId);
         }
         for (@NotNull Player player : instance.getPlayers()) {
             player.kick("Instance unregistered");
@@ -63,7 +61,9 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
 
     @Override
     public @Nullable UUID getInstanceOf(UUID player) {
-        return playerToInstance.get(player);
+        UUID uuid = playerToInstance.get(player);
+        if(uuid != null) return uuid;
+        return balancer.getInstanceOf(player);
     }
 
     /**

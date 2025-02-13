@@ -14,6 +14,7 @@ import me.mrfunny.minigame.bedwars.setup.BedwarsSetup;
 import me.mrfunny.minigame.bedwars.instance.BedwarsStorage;
 import me.mrfunny.minigame.deployment.info.DebugDeploymentInfo;
 import me.mrfunny.minigame.deployment.info.DeploymentInfo;
+import me.mrfunny.minigame.deployment.info.K8SDeploymentInfo;
 import me.mrfunny.minigame.deployment.info.PterodactylDeploymentInfo;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import me.mrfunny.minigame.common.serial.PosDeserializer;
@@ -71,7 +72,7 @@ public class    Main {
                 debug = true;
             }
         }
-        DeploymentInfo deploymentInfo = debug ? new DebugDeploymentInfo(args[0]) : new PterodactylDeploymentInfo();
+        DeploymentInfo deploymentInfo = debug ? new DebugDeploymentInfo(args[0]) : getCloudDeployment();
         if(deploymentInfo.getMinigameType() == null) {
             LOGGER.error("Don't know which minigame to start! Use server");
             MinecraftServer.stopCleanly();
@@ -116,6 +117,13 @@ public class    Main {
             MinecraftServer.stopCleanly();
             System.exit(1);
         }
+    }
+
+    private static DeploymentInfo getCloudDeployment() {
+        if(System.getenv().containsKey("KUBERNETES_SERVICE_PORT")) {
+            return new K8SDeploymentInfo();
+        }
+        return new PterodactylDeploymentInfo();
     }
 
     private static MinigameDeployment<?> pickMinigame(DeploymentInfo info) {
