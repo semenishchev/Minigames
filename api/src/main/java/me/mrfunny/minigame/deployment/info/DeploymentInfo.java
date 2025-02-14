@@ -5,4 +5,6 @@ public interface DeploymentInfo {
     String getServerId();
     String getServerHost();
     int getServerPort();
+    String getRegion();
+    String getLocation();
 }
