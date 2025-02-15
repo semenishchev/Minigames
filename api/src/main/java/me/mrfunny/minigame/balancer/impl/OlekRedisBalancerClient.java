@@ -1,13 +1,22 @@
 package me.mrfunny.minigame.balancer.impl;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import me.mrfunny.minigame.balancer.LoadBalancerClient;
 import me.mrfunny.minigame.deployment.Deployment;
+import me.mrfunny.minigame.deployment.info.DeploymentInfo;
 import me.mrfunny.minigame.storage.StorageMap;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONPropertyName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -27,6 +36,7 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     private final Jedis jedis;
     private final String serverId;
     private final HttpServer httpServer;
+    private final ObjectMapper JSON = new ObjectMapper(new JsonFactory());
 
     public OlekRedisBalancerClient(Deployment requestHandler) throws IOException {
         super(requestHandler);
@@ -156,6 +166,24 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     @Override
     public void markServerStarted() {
         httpServer.start();
+        DeploymentInfo info = this.requestHandler.getDeploymentInfo();
+        BalancedServerInfo data = new BalancedServerInfo(
+            this.serverId,
+            info.getServerHost() + ":" + info.getServerPort(),
+            info.getMinigameType(),
+            info.getRegion(),
+            info.getLocation(),
+            0,
+            true
+        );
+        String value;
+        try {
+            value = JSON.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            jedis.publish("balancer_server_status", "error:" + serverId + ":" + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        jedis.set("balancer_server_data", value);
         jedis.publish("balancer_server_status", "started:" + this.serverId);
     }
 
@@ -221,5 +249,29 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     @Override
     public CompletableFuture<String> requestGameServer(UUID player, String minigameType, String subtype, Map<String, Object> data) {
         return null; // todo
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class BalancedServerInfo {
+        public String id;
+        @JsonProperty("id")
+        public String ipAddr;
+        public String serverType;
+        public String region;
+        public String location;
+        public int playerCount;
+        public boolean available;
+        public BalancedServerInfo() {
+
+        }
+        public BalancedServerInfo(String id, String ipAddr, String serverType, String region, String location, int playerCount, boolean available) {
+            this.id = id;
+            this.ipAddr = ipAddr;
+            this.serverType = serverType;
+            this.region = region;
+            this.location = location;
+            this.playerCount = playerCount;
+            this.available = available;
+        }
     }
 }

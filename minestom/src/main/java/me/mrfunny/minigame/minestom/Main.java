@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
 
-public class    Main {
+public class Main {
     public static DeploymentInfo deploymentInfo;
     public static Logger LOGGER;
     public static ObjectMapper YAML;
