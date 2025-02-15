@@ -4,24 +4,32 @@ import io.github.togar2.pvp.feature.CombatFeatureSet;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.provider.DifficultyProvider;
 import io.github.togar2.pvp.utils.CombatVersion;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import me.mrfunny.minigame.bedwars.data.BedwarsPlayerData;
 import me.mrfunny.minigame.bedwars.instance.BedwarsGameTypes;
 import me.mrfunny.minigame.bedwars.instance.BedwarsInstance;
 import me.mrfunny.minigame.bedwars.registry.BedwarsRegistry;
+import me.mrfunny.minigame.bedwars.team.BedwarsTeam;
+import me.mrfunny.minigame.common.util.ArrayBackedHashMap;
 import me.mrfunny.minigame.deployment.info.DeploymentInfo;
+import me.mrfunny.minigame.errors.UserException;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import net.minestom.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
 
     private final CombatFeatureSet combatFeatures;
     private final EnumMap<BedwarsGameTypes, List<String>> availableMaps = new EnumMap<>(BedwarsGameTypes.class);
-    private final EnumMap<BedwarsGameTypes, List<BedwarsInstance>> availableInstances = new EnumMap<>(BedwarsGameTypes.class);
+    private final EnumMap<BedwarsGameTypes, Map<String, List<WeakReference<BedwarsInstance>>>> availableInstances = new EnumMap<>(BedwarsGameTypes.class);
 
     public BedwarsDeployment(DeploymentInfo deploymentInfo) {
         super(deploymentInfo);
@@ -52,7 +60,7 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
     }
 
     @Override
-    public BedwarsInstance createInstanceObject(@NotNull String subtype, @Nullable Map<String, String> data) {
+    public BedwarsInstance createInstanceObject(@NotNull String subtype, @NotNull Map<String, String> data) {
         BedwarsInstance bedwarsInstance;
         try {
             BedwarsGameTypes gameType = BedwarsGameTypes.valueOf(subtype.toUpperCase());
@@ -63,7 +71,7 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
             if(map == null) {
                 throw new RuntimeException("No map could be picked");
             }
-            bedwarsInstance = new BedwarsInstance(gameType, map, data);
+            bedwarsInstance = new BedwarsInstance(this, gameType, map, data);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -83,8 +91,38 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
             .toList();
     }
 
+    // todo: change players in team to actual player UUIDs
     @Override
-    public UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam) {
+    public UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam, Map<String, String> extraData) {
+        BedwarsGameTypes gameType = BedwarsGameTypes.valueOf(subtype.toUpperCase());
+        String map = extraData.get("map");
+        if(map == null) {
+            map = availableMaps.get(gameType).getFirst();
+        }
+        List<WeakReference<BedwarsInstance>> instanceCache = availableInstances.computeIfAbsent(gameType, k -> new HashMap<>()).get(map);
+        if(instanceCache == null || instanceCache.isEmpty()) {
+            throw new UserException("error.no-map", "No game servers for map " + map + " are available");
+        }
+
+        do {
+            int index = ThreadLocalRandom.current().nextInt(instanceCache.size());
+            WeakReference<BedwarsInstance> randomInstance = instanceCache.get(index);
+            BedwarsInstance instance = randomInstance.get();
+            if(instance == null) {
+                instanceCache.remove(index);
+                continue;
+            }
+            Collection<BedwarsTeam> teams = instance.getTeams().values();
+            if(playersInTeam > 1 && !instance.hasTeamSelector()) {
+                for(BedwarsTeam team : teams) {
+
+                }
+            }
+
+            instance.reserveSpots(playersInTeam);
+            return instance.getUniqueId();
+        } while(!instanceCache.isEmpty());
+
         return null;
     }
 }

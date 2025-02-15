@@ -18,10 +18,10 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
         super(deploymentInfo);
     }
 
-    public abstract T createInstanceObject(@NotNull String subtype, @Nullable Map<String, String> data);
+    public abstract T createInstanceObject(@NotNull String subtype, @NotNull Map<String, String> data);
 
     @Override
-    public UUID createInstance(@Nullable String subtype, @Nullable Map<String, String> data) {
+    public UUID createInstance(@Nullable String subtype, @NotNull Map<String, String> data) {
         if (subtype == null) {
             subtype = pickRandomSubtype();
         }

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Resembles a deployed server. It is the class that end software will implement.
@@ -15,6 +17,7 @@ public abstract class Deployment {
     protected final DeploymentInfo deploymentInfo;
     protected LoadBalancerClient balancer;
     protected Throwable encounteredError;
+    protected final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
 
     public Deployment(DeploymentInfo deploymentInfo) {
         this.deploymentInfo = deploymentInfo;
@@ -25,7 +28,7 @@ public abstract class Deployment {
      * @param subtype precise subtype of the minigame. Usually getServerType() + subtype together
      * @return instance id. Usually Deployment#getServerId() + internal id provided by this server
      */
-    public abstract UUID createInstance(@NotNull String subtype, @Nullable Map<String, String> data);
+    public abstract UUID createInstance(@NotNull String subtype, @NotNull Map<String, String> data);
 
     /**
      * Asks server to destroy an instance.
@@ -54,7 +57,7 @@ public abstract class Deployment {
         return getAvailableInstanceOfType(subtype, 1);
     }
 
-    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam);
+    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam, Map<String, String> extraData);
 
     /**
      * @return Player count accross all instances.
@@ -91,5 +94,9 @@ public abstract class Deployment {
 
     public void setEncounteredError(Throwable encounteredError) {
         this.encounteredError = encounteredError;
+    }
+
+    public ScheduledExecutorService getScheduler() {
+        return scheduler;
     }
 }

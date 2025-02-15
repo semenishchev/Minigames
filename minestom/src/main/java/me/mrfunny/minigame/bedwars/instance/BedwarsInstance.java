@@ -4,9 +4,9 @@ import me.mrfunny.minigame.bedwars.instance.stage.BedwarsStage;
 import me.mrfunny.minigame.bedwars.instance.stage.BedwarsLobby;
 import me.mrfunny.minigame.bedwars.setup.BedwarsMapConfig;
 import me.mrfunny.minigame.bedwars.team.BedwarsTeam;
-import me.mrfunny.minigame.bedwars.team.BedwarsTeamData;
 import me.mrfunny.minigame.common.ChunkPerFileChunkLoader;
 import me.mrfunny.minigame.common.TeamColor;
+import me.mrfunny.minigame.deployment.Deployment;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import me.mrfunny.minigame.minestom.instance.BalancedInstance;
 import net.minestom.server.event.EventNode;
@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 public class BedwarsInstance extends BalancedInstance {
@@ -30,8 +29,8 @@ public class BedwarsInstance extends BalancedInstance {
     private final boolean teamSelector;
     private BedwarsStage gameStage;
 
-    public BedwarsInstance(@NotNull BedwarsGameTypes gameType, String map, Map<String, String> data) throws IOException {
-        super(gameType.name(), null);
+    public BedwarsInstance(Deployment deployment, @NotNull BedwarsGameTypes gameType, String map, Map<String, String> data) throws IOException {
+        super(deployment, gameType.name(), null);
         this.gameType = gameType;
         this.mapConfig = BedwarsMapConfig.read(map);
         ChunkPerFileChunkLoader chunkLoader = new ChunkPerFileChunkLoader(getUniqueId(),
@@ -100,4 +99,14 @@ public class BedwarsInstance extends BalancedInstance {
     public LinkedList<Supplier<EventNode<? extends InstanceEvent>>> getActiveStageNodes() {
         return activeStageNodes;
     }
+
+    public Map<TeamColor, BedwarsTeam> getTeams() {
+        return this.teams;
+    }
+
+    public boolean hasTeamSelector() {
+        return teamSelector;
+    }
+
+    public boolean reserveSpots()
 }

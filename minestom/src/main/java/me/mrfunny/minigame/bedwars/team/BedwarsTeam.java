@@ -9,11 +9,13 @@ import net.minestom.server.scoreboard.Team;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BedwarsTeam {
     private final Set<BedwarsPlayerData> members = new HashSet<>();
     private final TeamColor teamColor;
     private final Team minecraftTeam;
+    private final AtomicInteger reservedSpots = new AtomicInteger(0);
 
     public BedwarsTeam(TeamColor color) {
         this.teamColor = color;
@@ -45,6 +47,8 @@ public class BedwarsTeam {
         this.minecraftTeam.removeMember(playerData.getUsername());
         this.members.remove(playerData);
     }
+
+    public
 
     public TeamColor getTeamColor() {
         return teamColor;
