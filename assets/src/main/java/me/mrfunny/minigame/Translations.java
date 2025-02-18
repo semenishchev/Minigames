@@ -1,6 +1,9 @@
 package me.mrfunny.minigame;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TranslatableComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,25 +45,32 @@ public class Translations {
     public static final Component COMMON_TIME_MINUTE = translation("msg.time-minute", "minute(s)");
     public static final Component COMMON_YOUR = translation("msg.your", "Your");
     public static final Component COMMON_TEAM = translation("msg.team", "Team");
-    public static final Component COMMON_COLOR_GREEN = translation("color.green", "Green");
-    public static final Component COMMON_COLOR_RED = translation("color.red", "Red");
-    public static final Component COMMON_COLOR_YELLOW = translation("color.yellow", "Yellow");
-    public static final Component COMMON_COLOR_BLUE = translation("color.blue", "Blue");
-    public static final Component COMMON_COLOR_PINK = translation("color.pink", "Pink");
-    public static final Component COMMON_COLOR_AQUA = translation("color.aqua", "Aqua");
-    public static final Component COMMON_COLOR_GRAY = translation("color.gray", "Gray");
-    public static final Component COMMON_COLOR_WHITE = translation("color.white", "White");
-    public static final Component COMMON_COLOR_BLACK = translation("color.black", "Black");
+    public static final Component COMMON_COLOR_GREEN = translation("color.green", "Green", NamedTextColor.GREEN);
+    public static final Component COMMON_COLOR_RED = translation("color.red", "Red", NamedTextColor.RED);
+    public static final Component COMMON_COLOR_YELLOW = translation("color.yellow", "Yellow", NamedTextColor.YELLOW);
+    public static final Component COMMON_COLOR_BLUE = translation("color.blue", "Blue", NamedTextColor.BLUE);
+    public static final Component COMMON_COLOR_PINK = translation("color.pink", "Pink", NamedTextColor.LIGHT_PURPLE);
+    public static final Component COMMON_COLOR_AQUA = translation("color.aqua", "Aqua", NamedTextColor.AQUA);
+    public static final Component COMMON_COLOR_GRAY = translation("color.gray", "Gray", NamedTextColor.DARK_GRAY);
+    public static final Component COMMON_COLOR_WHITE = translation("color.white", "White", NamedTextColor.WHITE);
+    public static final Component COMMON_COLOR_BLACK = translation("color.black", "Black", NamedTextColor.BLACK);
     public static final Component COMMON_TO_LOBBY = translation("msg.back-lobby", "Go back to Lobby");
     private static Component translation(String key) {
         return translation(key, null);
     }
     private static Component translation(String key, String fallback) {
-        Component component = Component.translatable()
+        return translation(key, fallback, null);
+    }
+
+    private static Component translation(String key, String fallback, TextColor color) {
+        TranslatableComponent.Builder builder = Component.translatable()
             .key(key)
             .fallback(fallback)
-            .decoration(TextDecoration.ITALIC, false)
-            .build();
+            .decoration(TextDecoration.ITALIC, false);
+        if(color != null) {
+            builder.color(color);
+        }
+        Component component = builder.build();
         if(allTranslations == null) {
             allTranslations = new LinkedList<>();
         }

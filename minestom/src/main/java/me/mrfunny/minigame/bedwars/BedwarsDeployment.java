@@ -4,16 +4,13 @@ import io.github.togar2.pvp.feature.CombatFeatureSet;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.provider.DifficultyProvider;
 import io.github.togar2.pvp.utils.CombatVersion;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import me.mrfunny.minigame.bedwars.data.BedwarsPlayerData;
 import me.mrfunny.minigame.bedwars.instance.BedwarsGameTypes;
 import me.mrfunny.minigame.bedwars.instance.BedwarsInstance;
 import me.mrfunny.minigame.bedwars.registry.BedwarsRegistry;
 import me.mrfunny.minigame.bedwars.team.BedwarsTeam;
-import me.mrfunny.minigame.common.util.ArrayBackedHashMap;
-import me.mrfunny.minigame.deployment.info.DeploymentInfo;
-import me.mrfunny.minigame.errors.UserException;
+import me.mrfunny.minigame.api.deployment.info.DeploymentInfo;
+import me.mrfunny.minigame.api.errors.UserException;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import net.minestom.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +20,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
 
@@ -91,9 +88,8 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
             .toList();
     }
 
-    // todo: change players in team to actual player UUIDs
     @Override
-    public UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam, Map<String, String> extraData) {
+    public UUID getAvailableInstanceOfType(@NotNull String subtype, Map<String, String> extraData, Set<UUID> playersToPlay) {
         BedwarsGameTypes gameType = BedwarsGameTypes.valueOf(subtype.toUpperCase());
         String map = extraData.get("map");
         if(map == null) {
@@ -103,7 +99,7 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
         if(instanceCache == null || instanceCache.isEmpty()) {
             throw new UserException("error.no-map", "No game servers for map " + map + " are available");
         }
-
+        int instances = instanceCache.size();
         do {
             int index = ThreadLocalRandom.current().nextInt(instanceCache.size());
             WeakReference<BedwarsInstance> randomInstance = instanceCache.get(index);
@@ -112,16 +108,30 @@ public class BedwarsDeployment extends MinigameDeployment<BedwarsInstance> {
                 instanceCache.remove(index);
                 continue;
             }
+            instances--;
+            // sanity checks
+            if(instance.isPrivateGame()) continue;
+            if(instance.getGameType().getPlayersInTeam() < playersToPlay.size()) continue;
+            // idk what is this but I hope this is fine
             Collection<BedwarsTeam> teams = instance.getTeams().values();
-            if(playersInTeam > 1 && !instance.hasTeamSelector()) {
+            if(!instance.hasTeamSelector()) {
+                BedwarsTeam selected = null;
+                Consumer<UUID> expiration = null;
                 for(BedwarsTeam team : teams) {
-
+                    if(!team.reserveSpots(playersToPlay)) continue;
+                    selected = team;
+                    expiration = team::unreserve;
+                    break;
                 }
+                if(selected == null) {
+                    continue;
+                }
+                instance.reserveSpots(playersToPlay, expiration);
+                return instance.getUniqueId();
             }
-
-            instance.reserveSpots(playersInTeam);
+            instance.reserveSpots(playersToPlay, null);
             return instance.getUniqueId();
-        } while(!instanceCache.isEmpty());
+        } while(instances > 0 || !instanceCache.isEmpty());
 
         return null;
     }

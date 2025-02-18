@@ -1,11 +1,12 @@
-package me.mrfunny.minigame.deployment;
+package me.mrfunny.minigame.api.deployment;
 
-import me.mrfunny.minigame.balancer.LoadBalancerClient;
-import me.mrfunny.minigame.deployment.info.DeploymentInfo;
+import me.mrfunny.minigame.api.balancer.LoadBalancerClient;
+import me.mrfunny.minigame.api.deployment.info.DeploymentInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,11 +54,7 @@ public abstract class Deployment {
     /**
      * @return Gets an instance which can accept a new player to join the game. Null if all games on the server are running
      */
-    public UUID getAvailableInstanceOfType(@NotNull String subtype) {
-        return getAvailableInstanceOfType(subtype, 1);
-    }
-
-    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, int playersInTeam, Map<String, String> extraData);
+    public abstract UUID getAvailableInstanceOfType(@NotNull String subtype, Map<String, String> data, Set<UUID> whoWillPlay);
 
     /**
      * @return Player count accross all instances.

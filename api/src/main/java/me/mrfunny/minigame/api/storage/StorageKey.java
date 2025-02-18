@@ -1,4 +1,4 @@
-package me.mrfunny.minigame.storage;
+package me.mrfunny.minigame.api.storage;
 
 public class StorageKey<T> {
     private final String name;

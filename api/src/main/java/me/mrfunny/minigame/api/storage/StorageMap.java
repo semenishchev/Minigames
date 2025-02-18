@@ -1,9 +1,7 @@
-package me.mrfunny.minigame.storage;
+package me.mrfunny.minigame.api.storage;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class StorageMap {
     private final Map<String, Object> backingMap = new HashMap<>();

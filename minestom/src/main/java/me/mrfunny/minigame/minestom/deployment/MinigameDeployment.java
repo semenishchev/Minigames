@@ -1,7 +1,7 @@
 package me.mrfunny.minigame.minestom.deployment;
 
-import me.mrfunny.minigame.deployment.Deployment;
-import me.mrfunny.minigame.deployment.info.DeploymentInfo;
+import me.mrfunny.minigame.api.deployment.Deployment;
+import me.mrfunny.minigame.api.deployment.info.DeploymentInfo;
 import me.mrfunny.minigame.minestom.instance.BalancedInstance;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;

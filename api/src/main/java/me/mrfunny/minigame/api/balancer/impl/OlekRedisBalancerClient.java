@@ -1,8 +1,6 @@
-package me.mrfunny.minigame.balancer.impl;
+package me.mrfunny.minigame.api.balancer.impl;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -10,17 +8,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import me.mrfunny.minigame.balancer.LoadBalancerClient;
-import me.mrfunny.minigame.deployment.Deployment;
-import me.mrfunny.minigame.deployment.info.DeploymentInfo;
-import me.mrfunny.minigame.storage.StorageMap;
+import me.mrfunny.minigame.api.balancer.LoadBalancerClient;
+import me.mrfunny.minigame.api.deployment.Deployment;
+import me.mrfunny.minigame.api.deployment.info.DeploymentInfo;
+import me.mrfunny.minigame.api.errors.UserException;
+import me.mrfunny.minigame.api.storage.StorageMap;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONPropertyName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPubSub;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -80,17 +77,33 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
             try {
                 Headers headers = ctx.getRequestHeaders();
                 String subtype = headers.getFirst("Balancer-Subtype");
-                String teamSizeStr = headers.getFirst("Balancer-Team-Size");
-                int teamSize = teamSizeStr != null ? Integer.parseInt(teamSizeStr) : 1;
-                UUID availableInstance = requestHandler.getAvailableInstanceOfType(subtype, teamSize);
-                if(availableInstance == null) {
-                    respond(ctx, 404, "No available instance");
-                    return;
+                Map<String, String> data = new HashMap<>();
+                Set<UUID> players = new HashSet<>();
+                for(Map.Entry<String, List<String>> entries : headers.entrySet()) {
+                    String key = entries.getKey();
+                    if(!key.startsWith("Balancer-")) continue;
+                    String withoutTag = key.replace("Balancer-", "");
+                    data.put(withoutTag.toLowerCase(), entries.getValue().getFirst());
+                    if(withoutTag.startsWith("Player-")) {
+                        players.add(UUID.fromString(withoutTag.replace("Player-", "")));
+                    }
                 }
-                respond(ctx, 200, availableInstance.toString());
+                try {
+                    UUID availableInstance = requestHandler.getAvailableInstanceOfType(subtype, data, players);
+                    if(availableInstance == null) {
+                        respond(ctx, 404, "No available instance");
+                        return;
+                    }
+                    respond(ctx, 200, availableInstance.toString());
+                } catch (UserException e) {
+                    respond(ctx, 400, e.getMessage());
+                } catch (Exception e) {
+                    respond(ctx, 500, "An internal server error occurred");
+                    LOGGER.error("Failed to find an available instance due to an internal error", e);
+                }
             } catch(Exception e) {
                 LOGGER.error("Failed to retrieve available instance", e);
-                respond(ctx, 500, e.getMessage());
+                respond(ctx, 500, "Failed handling request");
             }
         });
         httpServer.createContext("/total-players").setHandler(ctx -> {
@@ -247,8 +260,8 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     }
 
     @Override
-    public CompletableFuture<String> requestGameServer(UUID player, String minigameType, String subtype, Map<String, Object> data) {
-        return null; // todo
+    public CompletableFuture<String> requestGameServer(UUID player, String minigameType, String subtype, Map<String, String> data) {
+        return null;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

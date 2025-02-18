@@ -1,4 +1,4 @@
-package me.mrfunny.minigame.errors;
+package me.mrfunny.minigame.api.errors;
 
 public class UserException extends RuntimeException {
     private final String translationFallback;

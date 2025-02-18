@@ -1,6 +1,6 @@
-package me.mrfunny.minigame.balancer;
+package me.mrfunny.minigame.api.balancer;
 
-import me.mrfunny.minigame.deployment.Deployment;
+import me.mrfunny.minigame.api.deployment.Deployment;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;

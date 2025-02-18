@@ -1,6 +1,6 @@
 package me.mrfunny.minigame.bedwars.instance;
 
-import me.mrfunny.minigame.storage.StorageKey;
+import me.mrfunny.minigame.api.storage.StorageKey;
 
 public class BedwarsStorage {
     public static final String COLLECTION_NAME = "bedwars";

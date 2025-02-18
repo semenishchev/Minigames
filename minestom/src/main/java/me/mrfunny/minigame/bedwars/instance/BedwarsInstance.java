@@ -6,7 +6,7 @@ import me.mrfunny.minigame.bedwars.setup.BedwarsMapConfig;
 import me.mrfunny.minigame.bedwars.team.BedwarsTeam;
 import me.mrfunny.minigame.common.ChunkPerFileChunkLoader;
 import me.mrfunny.minigame.common.TeamColor;
-import me.mrfunny.minigame.deployment.Deployment;
+import me.mrfunny.minigame.api.deployment.Deployment;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import me.mrfunny.minigame.minestom.instance.BalancedInstance;
 import net.minestom.server.event.EventNode;
@@ -56,13 +56,14 @@ public class BedwarsInstance extends BalancedInstance {
 
     @Override
     public boolean canAcceptMorePlayers(int amount) {
+        if(!super.canAcceptMorePlayers(amount)) return false;
         int maxTeamSize = this.gameType.getTotalPlayers();
         if((maxTeamSize - this.getPlayers().size()) < amount) return false;
         if(teamSelector) return true;
         if(isPrivateGame()) return false;
         if(this.gameType.getPlayersInTeam() < amount) return false;
         for (BedwarsTeam team : teams.values()) {
-            if(maxTeamSize - team.getMembers().size() >= amount) {
+            if(maxTeamSize - team.getPlayersCount() >= amount) {
                 return true;
             }
         }
@@ -108,5 +109,8 @@ public class BedwarsInstance extends BalancedInstance {
         return teamSelector;
     }
 
-    public boolean reserveSpots()
+    @Override
+    public int getMaxPlayers() {
+        return gameType.getTotalPlayers();
+    }
 }

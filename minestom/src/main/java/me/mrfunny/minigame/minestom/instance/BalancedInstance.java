@@ -1,21 +1,23 @@
 package me.mrfunny.minigame.minestom.instance;
 
-import me.mrfunny.minigame.deployment.Deployment;
+import me.mrfunny.minigame.api.deployment.Deployment;
 import net.minestom.server.instance.IChunkLoader;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.world.DimensionType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class BalancedInstance extends InstanceContainer {
     private static final AtomicInteger instanceCount = new AtomicInteger(0);
     private final @Nullable String subtype;
-    private final AtomicInteger reservedSpots = new AtomicInteger(0);
+    protected final Set<UUID> reservedSpots = new HashSet<>();
     private final Deployment deployment;
 
     public static UUID createManagedUuid() {
@@ -34,21 +36,28 @@ public class BalancedInstance extends InstanceContainer {
     }
 
     public boolean canAcceptMorePlayers(int amount) {
-        return getMaxPlayers() <= reservedSpots.get() + amount;
+        if(getMaxPlayers() == -1) return true;
+        synchronized (reservedSpots) {
+            return reservedSpots.size() + amount <= getMaxPlayers();
+        }
     }
 
     public int getMaxPlayers() {
-        return 0;
+        return -1;
     }
 
-    public boolean reserveSpots(int amount) {
-        if(!canAcceptMorePlayers(amount)) return false;
+    public boolean reserveSpots(Set<UUID> players, Consumer<UUID> onExpire) {
+        if(!canAcceptMorePlayers(players.size())) return false;
         synchronized(reservedSpots) {
-            reservedSpots.addAndGet(amount);
+            reservedSpots.addAll(players);
         }
         deployment.getScheduler().schedule(() -> {
             synchronized(reservedSpots) {
-                reservedSpots.addAndGet(-amount);
+                for (UUID player : players) {
+                    if(getPlayerByUuid(player) != null) continue; // player has joined
+                    if(onExpire != null) onExpire.accept(player);
+                    reservedSpots.remove(player);
+                }
             }
         }, 3, TimeUnit.SECONDS); // kinda arbitrary but idc
         return true;

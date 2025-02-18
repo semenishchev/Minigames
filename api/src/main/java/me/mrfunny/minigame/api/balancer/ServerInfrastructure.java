@@ -1,6 +1,6 @@
-package me.mrfunny.minigame.balancer;
+package me.mrfunny.minigame.api.balancer;
 
-import me.mrfunny.minigame.storage.StorageMap;
+import me.mrfunny.minigame.api.storage.StorageMap;
 import net.kyori.adventure.text.Component;
 
 import java.time.Duration;
@@ -22,5 +22,5 @@ public interface ServerInfrastructure {
     StorageMap getPlayerData(UUID player, String collection);
     void updateGlobalPlayerData(UUID player, StorageMap data);
     void updatePlayerData(UUID player, String collection, StorageMap data);
-    CompletableFuture<String> requestGameServer(UUID player, String minigameType, String subtype, Map<String, Object> data);
+    CompletableFuture<String> requestGameServer(UUID player, String minigameType, String subtype, Map<String, String> data);
 }

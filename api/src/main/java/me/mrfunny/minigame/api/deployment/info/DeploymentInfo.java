@@ -1,4 +1,4 @@
-package me.mrfunny.minigame.deployment.info;
+package me.mrfunny.minigame.api.deployment.info;
 
 public interface DeploymentInfo {
     String getMinigameType();

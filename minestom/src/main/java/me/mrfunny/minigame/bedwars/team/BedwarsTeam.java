@@ -2,6 +2,7 @@ package me.mrfunny.minigame.bedwars.team;
 
 import me.mrfunny.minigame.bedwars.data.BedwarsPlayerData;
 import me.mrfunny.minigame.common.TeamColor;
+import me.mrfunny.minigame.api.data.BasicTeam;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.network.packet.server.play.TeamsPacket;
@@ -9,15 +10,16 @@ import net.minestom.server.scoreboard.Team;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
 
-public class BedwarsTeam {
+public class BedwarsTeam implements BasicTeam {
     private final Set<BedwarsPlayerData> members = new HashSet<>();
+    private final Set<UUID> reservedSpots = new HashSet<>();
     private final TeamColor teamColor;
     private final Team minecraftTeam;
-    private final AtomicInteger reservedSpots = new AtomicInteger(0);
+    private final int maxPlayers;
 
-    public BedwarsTeam(TeamColor color) {
+    public BedwarsTeam(int maxPlayers, TeamColor color) {
         this.teamColor = color;
         this.minecraftTeam = MinecraftServer.getTeamManager().createBuilder(color.name())
             .teamDisplayName(Component.text(color.name(), color.chatColor))
@@ -26,7 +28,7 @@ public class BedwarsTeam {
             .seeInvisiblePlayers()
             .updateTeamPacket()
             .build();
-
+        this.maxPlayers = maxPlayers;
     }
 
     public void addMember(BedwarsPlayerData playerData) {
@@ -38,6 +40,7 @@ public class BedwarsTeam {
         }
         this.minecraftTeam.addMember(playerData.getUsername());
         members.add(playerData);
+        reservedSpots.add(playerData.getUuid());
     }
 
     public void removeMember(BedwarsPlayerData playerData) {
@@ -46,15 +49,44 @@ public class BedwarsTeam {
         }
         this.minecraftTeam.removeMember(playerData.getUsername());
         this.members.remove(playerData);
+        this.reservedSpots.remove(playerData.getUuid());
     }
 
-    public
+    @Override
+    public TeamColor getColor() {
+        return this.teamColor;
+    }
 
-    public TeamColor getTeamColor() {
-        return teamColor;
+    @Override
+    public int getMaxPlayers() {
+        return this.maxPlayers;
+    }
+
+    @Override
+    public int getPlayersCount() {
+        return this.members.size();
     }
 
     public Set<BedwarsPlayerData> getMembers() {
-        return members;
+        return this.members;
+    }
+
+    @Override
+    public boolean reserveSpots(Set<UUID> players) {
+        if(reservedSpots.size() + players.size() > maxPlayers) {
+            return false;
+        }
+        reservedSpots.addAll(players);
+        return true;
+    }
+
+    @Override
+    public boolean supportsReservingSpots() {
+        return true;
+    }
+
+    @Override
+    public void unreserve(UUID didntJoin) {
+        reservedSpots.remove(didntJoin);
     }
 }

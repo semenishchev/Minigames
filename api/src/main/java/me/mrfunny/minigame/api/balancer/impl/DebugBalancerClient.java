@@ -1,8 +1,8 @@
-package me.mrfunny.minigame.balancer.impl;
+package me.mrfunny.minigame.api.balancer.impl;
 
-import me.mrfunny.minigame.balancer.LoadBalancerClient;
-import me.mrfunny.minigame.deployment.Deployment;
-import me.mrfunny.minigame.storage.StorageMap;
+import me.mrfunny.minigame.api.balancer.LoadBalancerClient;
+import me.mrfunny.minigame.api.deployment.Deployment;
+import me.mrfunny.minigame.api.storage.StorageMap;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
