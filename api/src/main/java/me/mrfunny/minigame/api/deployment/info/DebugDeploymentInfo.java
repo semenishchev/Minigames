@@ -27,4 +27,14 @@ public class DebugDeploymentInfo implements DeploymentInfo {
     public int getServerPort() {
         return 25565;
     }
+
+    @Override
+    public String getRegion() {
+        return "none";
+    }
+
+    @Override
+    public String getLocation() {
+        return "dev";
+    }
 }

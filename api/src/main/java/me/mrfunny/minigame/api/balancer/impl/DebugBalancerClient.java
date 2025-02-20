@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class DebugBalancerClient extends LoadBalancerClient {
     private static final Logger LOGGER = LoggerFactory.getLogger("Debug Balancer");
+
     public DebugBalancerClient(Deployment requestHandler) {
         super(requestHandler);
     }
@@ -45,7 +46,8 @@ public class DebugBalancerClient extends LoadBalancerClient {
     }
 
     @Override
-    public void serverKeepalive() {}
+    public void serverKeepalive() {
+    }
 
     @Override
     public void markServerStarted() {
@@ -108,8 +110,7 @@ public class DebugBalancerClient extends LoadBalancerClient {
     }
 
     @Override
-    public CompletableFuture<String> requestGameServer(UUID player, String minigameType, String subtype, Map<String, Object> data) {
-        LOGGER.info("Requesting a new game server for {}", player);
-        return CompletableFuture.failedFuture(new UnsupportedOperationException());
+    public CompletableFuture<String> requestGameServer(UUID player, String minigameType, String subtype, Map<String, String> data) {
+        return null;
     }
 }

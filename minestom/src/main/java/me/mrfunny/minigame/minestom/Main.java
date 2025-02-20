@@ -15,7 +15,6 @@ import me.mrfunny.minigame.bedwars.instance.BedwarsStorage;
 import me.mrfunny.minigame.api.deployment.info.DebugDeploymentInfo;
 import me.mrfunny.minigame.api.deployment.info.DeploymentInfo;
 import me.mrfunny.minigame.api.deployment.info.K8SDeploymentInfo;
-import me.mrfunny.minigame.api.deployment.info.PterodactylDeploymentInfo;
 import me.mrfunny.minigame.minestom.deployment.MinigameDeployment;
 import me.mrfunny.minigame.common.serial.PosDeserializer;
 import me.mrfunny.minigame.common.serial.PosSerializer;
@@ -24,6 +23,7 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
+import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.instance.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,6 +103,7 @@ public class Main {
                     event.setSpawningInstance(MinecraftServer.getInstanceManager().getInstance(id));
                 });
             } else {
+                VelocityProxy.enable(System.getenv("VELOCITY_SECRET"));
                 globalEventHandler.addListener(AsyncPlayerConfigurationEvent.class, event -> {
                     final Player player = event.getPlayer();
                     Instance instance = minigame.getAssignedInstance(player);
@@ -134,7 +135,7 @@ public class Main {
         if(System.getenv().containsKey("KUBERNETES_SERVICE_PORT")) {
             return new K8SDeploymentInfo();
         }
-        return new PterodactylDeploymentInfo();
+        return new DebugDeploymentInfo("bedwars");
     }
 
     private static MinigameDeployment<?> pickMinigame(DeploymentInfo info) {

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+
+metadata:
+  labels:
+    name: "minigame"
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - preference:
+            matchExpressions:
+              - key: reliability
+                operator: NotIn
+                values:
+                  - weak
+          weight: 1
+  containers:
+    - name: server
+      image: therealolek/minigame:1
+      env:
+        - name: POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MINIGAME_TYPE
+          value: "bedwars"
+
