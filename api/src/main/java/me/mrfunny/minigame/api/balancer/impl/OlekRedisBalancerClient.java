@@ -39,7 +39,6 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
         super(requestHandler);
         this.jedis = new Jedis(System.getenv("REDIS_ADDRESS"));
         jedis.connect();
-        Runtime.getRuntime().addShutdownHook(new Thread(jedis::close));
         this.serverId = requestHandler.getDeploymentInfo().getServerId();
         httpServer = HttpServer.create(new InetSocketAddress("0.0.0.0", 3000), 0);
         httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
@@ -204,6 +203,7 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     public void markServerStopped(String error) {
         httpServer.stop(0);
         jedis.publish("balancer_server_status", "stopped:" + this.serverId);
+        jedis.close();
     }
 
     @Override
