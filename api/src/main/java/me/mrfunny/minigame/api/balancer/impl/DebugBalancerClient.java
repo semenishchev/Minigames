@@ -26,8 +26,8 @@ public class DebugBalancerClient extends LoadBalancerClient {
     }
 
     @Override
-    public void reportNewInstanceId(String subtype, UUID instanceId) {
-        LOGGER.info("Reporting new instance of {} - {}", subtype, instanceId);
+    public void reportNewInstanceId(String subtype, UUID instanceId, Map<String, String> data) {
+        LOGGER.info("reporting new instance");
     }
 
     @Override

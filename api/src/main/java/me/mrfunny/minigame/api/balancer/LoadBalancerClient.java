@@ -3,6 +3,7 @@ package me.mrfunny.minigame.api.balancer;
 import me.mrfunny.minigame.api.deployment.Deployment;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.UUID;
 
 public abstract class LoadBalancerClient implements ServerInfrastructure {
@@ -21,7 +22,7 @@ public abstract class LoadBalancerClient implements ServerInfrastructure {
      * @param subtype Minigame subtype
      * @param instanceId instance id
      */
-    public abstract void reportNewInstanceId(String subtype, UUID instanceId);
+    public abstract void reportNewInstanceId(String subtype, UUID instanceId, Map<String, String> data);
 
     /**
      * Lets LB know that instance has completely cleaned up after a game and may be reused again

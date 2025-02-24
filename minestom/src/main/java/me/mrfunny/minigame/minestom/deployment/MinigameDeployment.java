@@ -31,7 +31,7 @@ public abstract class MinigameDeployment<T extends BalancedInstance> extends Dep
         BalancedInstance instance = createInstanceObject(subtype, data);
         if(instance == null) return null;
         MinecraftServer.getInstanceManager().registerInstance(instance);
-        this.balancer.reportNewInstanceId(subtype, instance.getUniqueId());
+        this.balancer.reportNewInstanceId(subtype, instance.getUniqueId(), data);
         return instance.getUniqueId();
     }
 

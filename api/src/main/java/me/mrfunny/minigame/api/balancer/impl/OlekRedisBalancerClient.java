@@ -151,8 +151,15 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     }
 
     @Override
-    public void reportNewInstanceId(String subtype, UUID instanceId) {
-        jedis.publish("balancer_instance_status", "new_instance:" + this.serverId + ":" + instanceId + ":" + subtype);
+    public void reportNewInstanceId(String subtype, UUID instanceId, Map<String, String> data) {
+        BalancedInstanceInfo instanceInfo = new BalancedInstanceInfo(instanceId.toString(), serverId, this.requestHandler.getServerType(), subtype, data);
+        try {
+            jedis.set("balancer_instance_data_" + instanceId, JSON.writeValueAsString(instanceInfo));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        jedis.sadd("balancer_server_instances_" + serverId, instanceId.toString());
+        jedis.publish("balancer_instance_status", "new_instance:" + this.serverId + ":" + instanceId);
     }
 
     @Override
@@ -163,6 +170,8 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     @Override
     public void markInstanceDestroyed(UUID instanceId, String reason) {
         jedis.publish("balancer_instance_status", "destroyed:" + this.serverId + ":" + instanceId + ":" + reason);
+        jedis.srem("balancer_server_instances_" + serverId, instanceId.toString());
+        jedis.del("balancer_instance_data_" + instanceId);
     }
 
     @Override
@@ -196,6 +205,7 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
             throw new RuntimeException(e);
         }
         jedis.set("balancer_server_data_" + serverId, value);
+        jedis.sadd("balancer_servers", serverId);
         jedis.publish("balancer_server_status", "started:" + this.serverId);
     }
 
@@ -203,6 +213,8 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     public void markServerStopped(String error) {
         httpServer.stop(0);
         jedis.publish("balancer_server_status", "stopped:" + this.serverId);
+        jedis.del("balancer_server_data_" + serverId);
+        jedis.srem("balancer_servers", serverId);
         jedis.close();
     }
 
@@ -274,9 +286,9 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
         public String location;
         public int playerCount;
         public boolean available;
-        public BalancedServerInfo() {
 
-        }
+        public BalancedServerInfo() {}
+
         public BalancedServerInfo(String id, String ipAddr, String serverType, String region, String location, int playerCount, boolean available) {
             this.id = id;
             this.ipAddr = ipAddr;
@@ -285,6 +297,25 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
             this.location = location;
             this.playerCount = playerCount;
             this.available = available;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class BalancedInstanceInfo {
+        public String id;
+        public String serverId;
+        public String serverType;
+        public String serverSubtype;
+        public Map<String, String> data = new HashMap<>();
+
+        public BalancedInstanceInfo() {}
+
+        public BalancedInstanceInfo(String id, String serverId, String serverType, String serverSubtype, Map<String, String> data) {
+            this.id = id;
+            this.serverId = serverId;
+            this.serverType = serverType;
+            this.serverSubtype = serverSubtype;
+            this.data = data;
         }
     }
 }
