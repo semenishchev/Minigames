@@ -195,7 +195,7 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
             jedis.publish("balancer_server_status", "error:" + serverId + ":" + e.getMessage());
             throw new RuntimeException(e);
         }
-        jedis.set("balancer_server_data", value);
+        jedis.set("balancer_server_data_" + serverId, value);
         jedis.publish("balancer_server_status", "started:" + this.serverId);
     }
 
@@ -267,7 +267,7 @@ public class OlekRedisBalancerClient extends LoadBalancerClient {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class BalancedServerInfo {
         public String id;
-        @JsonProperty("id")
+        @JsonProperty("ip")
         public String ipAddr;
         public String serverType;
         public String region;
